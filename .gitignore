@@ -1,0 +1,9 @@
+*~
+*.bak
+*.gz
+*.pyc
+*.log
+*.jou
+*.csv
+*.ini
+*.wdb
