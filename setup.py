@@ -85,9 +85,9 @@ setup(name=module_name,
       long_description=long_description,
       long_description_content_type="text/markdown",
       author="Lucian Petrica",
-      url="https://github.com/Xilinx/ResNet50-QNN",
+      url="https://github.com/Xilinx/ResNet50-PYNQ",
       packages=find_packages(),
-      download_url="https://github.com/Xilinx/ResNet50-QNN",
+      download_url="https://github.com/Xilinx/ResNet50-PYNQ",
       package_data={
           "": data_files,
       },
@@ -116,7 +116,7 @@ setup(name=module_name,
       },
       entry_points={
           "pynq.notebooks": [
-              "ResNet50-QNN = {}.notebooks".format(module_name)
+              "ResNet50 = {}.notebooks".format(module_name)
           ]
       },
       cmdclass={"build_py": build_py},

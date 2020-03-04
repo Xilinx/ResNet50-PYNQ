@@ -22,7 +22,7 @@ work.
 To build the accelerator, clone the repository, after which:
 
 ```console
-cd ResNet50-QNN/compile
+cd ResNet50-PYNQ/compile
 make NET=w1a2_v1.0
 cd ../link
 make
@@ -36,7 +36,7 @@ After you have built the accelerator, you can `install` the required files in
 the `host` folder. Move in the cloned repo and do `make install`
 
 ```console
-cd ResNet50-QNN
+cd ResNet50-PYNQ
 make install
 ```
 
@@ -51,10 +51,10 @@ Install the `resnet50-pynq` package using `pip`:
    pip install resnet50-pynq
    ```
 
-After the package is installed, to get your own copy of all the notebooks 
-available run:
+After the package is installed, to get your own copy of the available notebooks 
+run:
    ```bash
-   pynq get-notebooks ResNet50-QNN
+   pynq get-notebooks ResNet50
    ```
 
 You can then try things out by doing:

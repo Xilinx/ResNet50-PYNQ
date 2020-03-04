@@ -3,3 +3,4 @@ include *.md
 include LICENSE
 recursive-include host *
 exclude host/*.py
+exclude host/*.md
