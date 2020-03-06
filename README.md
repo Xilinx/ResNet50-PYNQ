@@ -19,7 +19,7 @@ The Accelerator is built using *Vitis 2019.2*. We recommend using this version,
 otherwise changes might be required to source and/or Makefiles for things to 
 work.
 
-To build the accelerator, clone the repository, after which:
+To build the accelerator, clone the repository (using `--recursive` to pull submodules), after which:
 
 ```console
 cd ResNet50-PYNQ/compile
