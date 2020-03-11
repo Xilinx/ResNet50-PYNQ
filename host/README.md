@@ -5,6 +5,10 @@ All of the example code is pure Python, using PYNQ for accelerator memory alloca
 
 ## Multithreaded Inference
 
+The Python script `infer_pynq_threaded.py` is intended to provide an approximation of real-world inference workloads.
+It utilizes multiple threads for preprocessing and accelerator invocation.
+The configurable script parameters are:
+
 Parameter            | Description                         									   | Default Value
 -----------------    | -----------------                   									   | -----------------
 --xclbin             | Path to accelerator xclbin file     									   | N/A
