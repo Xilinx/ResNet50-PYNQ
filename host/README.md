@@ -41,14 +41,16 @@ If provided with this file, the script will calculate the total accuracy on the 
 ## Synthetic Benchmark
 
 The Python script `synth_bench_power.py` runs a synthetic benchmark on the accelerator, measuring the duration of the inference processing, without any data movement.
-We measure latency, FPS, FPGA power, and total board power. The configurable script parameters are:
+We measure latency, FPS, and also FPGA power and total board power using the PMBus module from PYNQ.
+The configurable script parameters are:
 
 Parameter            | Description                         									   | Default Value
 -----------------    | -----------------                   									   | -----------------
---xclbin             | Path to accelerator xclbin file     									   | N/A
---fcweights          | Path to CSV file storing FC weights 									   | N/A
---bs                 | Batch size                           									   | N/A
---reps               | Number of batches                									   | N/A
+--xclbin             | Path to accelerator xclbin file     									   | resnet50.xclbin
+--fcweights          | Path to CSV file storing FC weights 									   | fcweights.csv
+--shell              | Name of required Alveo shell                            | xilinx_u250_xdma_201830_2
+--bs                 | Batch size                           									 | 1
+--reps               | Number of batches                                       | 100
 
 Some example invocations of the script:
 
