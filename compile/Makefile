@@ -26,6 +26,7 @@
 #  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+SHELL := /bin/bash
 DMAS=inoutdma
 DMA_IPS=$(addsuffix .zip,$(DMAS))
 RESBLOCKS=res2a res2b res2c res3a res3b res3c res3d res4a res4b res4c res4d res4e res4f res5a res5b res5c
