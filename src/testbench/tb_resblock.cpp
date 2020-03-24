@@ -32,7 +32,6 @@
 #include "ap_int.h"
 #include "hls_stream.h"
 #include "bnn-library.h"
-#include "config.h"
 #include <string>
 #include <iostream>
 #include "assert.h"
@@ -41,6 +40,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "config.h"
 #include "tb_utils.h"
 using namespace hls;
 using namespace std;
@@ -48,7 +48,23 @@ using namespace std;
 FILE * file_input;
 FILE * file_output;
 
-void resblock(stream<ap_uint<RES_2A_SIMD*RES_BYPINBITS> > &input, stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > &output);
+void streamer(
+#ifdef RES2BR
+              stream<ap_uint<RES_1_SIMD*RES_1_PE*RES_1_WBITS> > &weights1,
+#endif
+              stream<ap_uint<RES_2A_SIMD*RES_2A_PE*RES_2A_WBITS> > &weights2a,
+              stream<ap_uint<RES_2B_SIMD*RES_2B_PE*RES_2B_WBITS> > &weights2b,
+              stream<ap_uint<RES_2C_SIMD*RES_2C_PE*RES_2C_WBITS> > &weights2c
+);
+
+void resblock(stream<ap_uint<RES_2A_SIMD*RES_BYPINBITS> > &input, stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > &output,
+#ifdef RES2BR
+              stream<ap_uint<RES_1_SIMD*RES_1_PE*RES_1_WBITS> > &weights1,
+#endif
+              stream<ap_uint<RES_2A_SIMD*RES_2A_PE*RES_2A_WBITS> > &weights2a,
+              stream<ap_uint<RES_2B_SIMD*RES_2B_PE*RES_2B_WBITS> > &weights2b,
+              stream<ap_uint<RES_2C_SIMD*RES_2C_PE*RES_2C_WBITS> > &weights2c
+);
 
 int test_resblock(const std::string& infile, const std::string& outfile){
     file_input = fopen(infile.c_str(), "r");
@@ -62,10 +78,31 @@ int test_resblock(const std::string& infile, const std::string& outfile){
     stream<ap_uint<RES_2A_SIMD*RES_BYPINBITS> > res_in("res_in");
     stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > res_out("res_out");
 
-    loadStreamFromFile <RES_2A_IFMC*RES_BYPINBITS, RES_BYPINBITS>(file_input, input, RES_2A_IFMC, RES_2A_IFMDIM, RES_2A_IFMDIM);
+#ifdef RES2BR
+    stream<ap_uint<RES_1_SIMD*RES_1_PE*RES_1_WBITS> > weights1("w1");
+#endif
+    stream<ap_uint<RES_2A_SIMD*RES_2A_PE*RES_2A_WBITS> > weights2a("w2a");
+    stream<ap_uint<RES_2B_SIMD*RES_2B_PE*RES_2B_WBITS> > weights2b("w2b");
+    stream<ap_uint<RES_2C_SIMD*RES_2C_PE*RES_2C_WBITS> > weights2c("w2c");
 
+    streamer(
+#ifdef RES2BR
+        weights1,
+#endif
+        weights2a, weights2b, weights2c
+    );
+
+    loadStreamFromFile <RES_2A_IFMC*RES_BYPINBITS, RES_BYPINBITS>(file_input, input, RES_2A_IFMC, RES_2A_IFMDIM, RES_2A_IFMDIM);
     StreamingDataWidthConverter_Batch<RES_2A_IFMC*RES_BYPINBITS, RES_2A_SIMD*RES_BYPINBITS , RES_2A_IFMDIM*RES_2A_IFMDIM>(input, res_in, 1);
-    resblock(res_in, res_out);
+
+    resblock(res_in, res_out,
+#ifdef RES2BR
+        weights1,
+#endif
+        weights2a, weights2b, weights2c
+    );
+
+
     StreamingDataWidthConverter_Batch<RES_2C_PE*RES_2C_ACTBITS, RES_2C_OFMC*RES_2C_ACTBITS, RES_2C_OFMDIM*RES_2C_OFMDIM*(RES_2C_OFMC/RES_2C_PE)>(res_out, output, 1);
 
     int nerrors = checkStreamAgainstFile <RES_2C_OFMC*RES_2C_ACTBITS, RES_2C_ACTBITS>(file_output, output, RES_2C_OFMC, RES_2C_OFMDIM, RES_2C_OFMDIM);
