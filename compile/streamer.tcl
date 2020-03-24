@@ -32,7 +32,6 @@ set net [lindex $argv 2]
 set command [lindex $argv 3]
 set device [lindex $argv 4]
 set current_dir [pwd]
-set tb_argv "$current_dir/../src/$net/$block_name/input.csv $current_dir/../src/$net/$block_name/output.csv"
 
 set do_sim 0
 set do_syn 0
@@ -67,20 +66,16 @@ switch $command {
 }
 
 
-open_project build_$block_name
+open_project build_${block_name}_streamer
 
-add_files ../src/resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src/hls/finn-hls"
-# add stremer to tb
-add_files -tb ../src/streamer.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src -I../src/hls/finn-hls -I../src/testbench"
-add_files -tb ../src/testbench/tb_resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src -I../src/hls/finn-hls -I../src/testbench"
+add_files ../src/streamer.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src/hls/finn-hls"
 
-set_top resblock
+set_top streamer
 
 open_solution sol1
 
 if {$do_sim} {
-    csim_design -clean -argv $tb_argv
-    # csim_design -clean -compiler clang -argv $tb_argv
+    puts "No testbench defined for streamer"
 }
 
 if {$do_syn} {
@@ -90,12 +85,12 @@ if {$do_syn} {
 }
 
 if {$do_export} {
-    config_export -format ip_catalog -ipname $block_name
+    config_export -format ip_catalog -ipname ${block_name}_streamer
     export_design
 }
 
 if ${do_cosim} {
-    cosim_design -argv $tb_argv
+    puts "No testbench defined for streamer"
 }
 
 exit
