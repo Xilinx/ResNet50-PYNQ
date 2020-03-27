@@ -166,7 +166,7 @@ void postres(stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > &input, stream<ap_uint<3
 #pragma HLS INTERFACE axis register both port=output
 #pragma HLS INTERFACE axis register both port=input
 #pragma HLS INTERFACE axis register both port=weights
-#pragma HLS INTERFACE ap_ctrl_chain port=return
+#pragma HLS INTERFACE ap_ctrl_none port=return
 #include "outpipe/pragma.h"
 #pragma HLS DATAFLOW
     stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > reluout("reluout");

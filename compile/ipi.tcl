@@ -362,12 +362,6 @@ proc cr_bd_resnet50 { parentCell } {
   connect_bd_net [get_bd_pins rst0_pass_slr2/Res] [get_bd_pins res2b_0/ap_rst_n] [get_bd_pins res3b_0/ap_rst_n] [get_bd_pins res4c_0/ap_rst_n] [get_bd_pins res4d_0/ap_rst_n] [get_bd_pins res5b_0/ap_rst_n]
   connect_bd_net [get_bd_pins rst0_pass_slr3/Res] [get_bd_pins res2c_0/ap_rst_n] [get_bd_pins res3a_0/ap_rst_n] [get_bd_pins res4e_0/ap_rst_n] [get_bd_pins res4f_0/ap_rst_n] [get_bd_pins res5a_0/ap_rst_n]
 
-  # Create constant 1 for start and continue lines
-  create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0
-  set_property -dict [list CONFIG.CONST_VAL {1}] [get_bd_cells xlconstant_0]
-  connect_bd_net [get_bd_pins xlconstant_0/dout] [get_bd_pins preres_0/ap_start] [get_bd_pins res2a_0/ap_start] [get_bd_pins res2b_0/ap_start] [get_bd_pins res2c_0/ap_start] [get_bd_pins res3a_0/ap_start] [get_bd_pins res3b_0/ap_start] [get_bd_pins res3c_0/ap_start] [get_bd_pins res3d_0/ap_start] [get_bd_pins res4a_0/ap_start] [get_bd_pins res4b_0/ap_start] [get_bd_pins res4c_0/ap_start] [get_bd_pins res4d_0/ap_start] [get_bd_pins res4e_0/ap_start] [get_bd_pins res4f_0/ap_start] [get_bd_pins res5a_0/ap_start] [get_bd_pins res5b_0/ap_start] [get_bd_pins res5c_0/ap_start] [get_bd_pins postres_0/ap_start]
-  connect_bd_net [get_bd_pins xlconstant_0/dout] [get_bd_pins preres_0/ap_continue] [get_bd_pins res2a_0/ap_continue] [get_bd_pins res2b_0/ap_continue] [get_bd_pins res2c_0/ap_continue] [get_bd_pins res3a_0/ap_continue] [get_bd_pins res3b_0/ap_continue] [get_bd_pins res3c_0/ap_continue] [get_bd_pins res3d_0/ap_continue] [get_bd_pins res4a_0/ap_continue] [get_bd_pins res4b_0/ap_continue] [get_bd_pins res4c_0/ap_continue] [get_bd_pins res4d_0/ap_continue] [get_bd_pins res4e_0/ap_continue] [get_bd_pins res4f_0/ap_continue] [get_bd_pins res5a_0/ap_continue] [get_bd_pins res5b_0/ap_continue] [get_bd_pins res5c_0/ap_continue] [get_bd_pins postres_0/ap_continue]
-
   # Auto-assign addresses (TODO: check)
   exclude_bd_addr_seg [get_bd_addr_segs inoutdma_0/Data_m_axi_gmem0/SEG_m_axi_gmem0_Reg]
   exclude_bd_addr_seg [get_bd_addr_segs inoutdma_0/Data_m_axi_gmem1/SEG_m_axi_gmem1_Reg]

@@ -41,7 +41,7 @@ using namespace hls;
 void preres(stream<ap_uint<L0_IFMC*L0_INBITS> > &input, stream<ap_uint<pool0_CHANNELS*pool0_PRECISION> > &output){
 #pragma HLS INTERFACE axis register both port=output
 #pragma HLS INTERFACE axis register both port=input
-#pragma HLS INTERFACE ap_ctrl_chain port=return
+#pragma HLS INTERFACE ap_ctrl_none port=return
 #include "pragma.h"
 #pragma HLS DATAFLOW
     stream<ap_uint<L0_OFMC*L0_ACTBITS> > inter("inter");

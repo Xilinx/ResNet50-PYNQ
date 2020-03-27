@@ -39,7 +39,7 @@ using namespace hls;
 void resblock(stream<ap_uint<RES_2A_SIMD*RES_BYPINBITS> > &input, stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > &output){
 #pragma HLS INTERFACE axis register both port=output
 #pragma HLS INTERFACE axis register both port=input
-#pragma HLS INTERFACE ap_ctrl_chain port=return
+#pragma HLS INTERFACE ap_ctrl_none port=return
 #include "pragma.h"
 #pragma HLS DATAFLOW
 #ifdef RES1BR
