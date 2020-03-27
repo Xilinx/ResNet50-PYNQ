@@ -57,3 +57,20 @@ add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_regio
 add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/rst0_buf_slr2]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/rst0_pipe_slr3]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/rst0_buf_slr3]] -clear_locs
+
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res2a_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res2b_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res2c_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3a_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3b_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3c_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3d_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4a_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4b_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4c_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4d_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4e_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4f_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res5a_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res5b_streamer]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res5c_streamer]] -clear_locs
