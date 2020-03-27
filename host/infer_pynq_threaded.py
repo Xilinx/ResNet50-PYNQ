@@ -42,7 +42,7 @@ def setup_accelerator(xclbin, wfile):
     ol=pynq.Overlay(xclbin)
 
     fcweights = np.genfromtxt(wfile, delimiter=',', dtype=np.int8)
-    fcbuf = pynq.allocate((1000,2048), dtype=np.int8, target=ol.bank0)
+    fcbuf = pynq.allocate((1000,2048), dtype=np.int8, target=ol.PLRAM0)
 
     #csv reader erroneously adds one extra element to the end, so remove, then reshape
     fcweights = fcweights[:-1].reshape(1000,2048)

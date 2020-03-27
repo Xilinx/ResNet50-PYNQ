@@ -39,9 +39,9 @@ XCLBIN_OPTIMIZE := 2
 #CHIPSCOPE=--dk chipscope:$(KERNEL)_1:s_axi_control --dk chipscope:$(KERNEL)_1:m_axi_gmem0 --dk chipscope:$(KERNEL)_1:m_axi_gmem1
 CHIPSCOPE=
 #optional memory bank assignment, for multi-MM designs (MULTIBANK defined)
-MEMBANK=
+MEMBANK=--sp $(KERNEL)_1.m_axi_gmem2:PLRAM[0]
 #example dual bank assignment:
-#MEMBANK=--sp $(KERNEL)_1.gmem0:bank2 --sp $(KERNEL)_1.gmem1:bank3
+#MEMBANK=--sp $(KERNEL)_1.m_axi_gmem0:DDR[0] --sp $(KERNEL)_1.m_axi_gmem1:DDR[3]
 #floorplanning
 FLOORPLAN=`pwd`/floorplan.tcl
 FLOORPLAN_OPTS=--xp vivado_prop:run.impl_1.STEPS.OPT_DESIGN.TCL.POST=$(FLOORPLAN)
@@ -49,11 +49,14 @@ FLOORPLAN_OPTS=--xp vivado_prop:run.impl_1.STEPS.OPT_DESIGN.TCL.POST=$(FLOORPLAN
 #example to add profiling to all kernels
 #PROFILE_OPTS=--profile_kernel data:all:all:all
 PROFILE_OPTS=
+#PLRAM set-up
+PLRAM_CONFIG=`pwd`/setup_plram.tcl
+PLRAM_OPTS=--xp param:compiler.userPreSysLinkTcl=$(PLRAM_CONFIG)
 
 all: $(XCLBIN_OUTPUT)
 
 $(XCLBIN_OUTPUT): $(XO_INPUT)
-	v++ --link --target hw $(PROFILE_OPTS) --kernel_frequency $(XCLBIN_FREQ_OPTS) --save-temps -R2 --optimize $(XCLBIN_OPTIMIZE) $(CHIPSCOPE) $(MEMBANK) --platform $(PLATFORM) $(FLOORPLAN_OPTS) $< -o $@
+	v++ --link --target hw $(PROFILE_OPTS) --kernel_frequency $(XCLBIN_FREQ_OPTS) --save-temps -R2 --optimize $(XCLBIN_OPTIMIZE) $(CHIPSCOPE) $(MEMBANK) --platform $(PLATFORM) $(FLOORPLAN_OPTS) $(PLRAM_OPTS) $< -o $@
 
 .PHONY=clean
 clean:
