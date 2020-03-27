@@ -70,14 +70,17 @@ switch $command {
 open_project build_$block_name
 
 add_files ../src/resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src/hls/finn-hls"
-add_files -tb ../src/testbench/tb_resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -I../src/$net/$block_name -I../src/hls -I../src/hls/finn-hls -I../src/testbench"
+# add stremer to tb
+add_files -tb ../src/streamer.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src -I../src/hls/finn-hls -I../src/testbench"
+add_files -tb ../src/testbench/tb_resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src -I../src/hls/finn-hls -I../src/testbench"
 
 set_top resblock
 
 open_solution sol1
 
 if {$do_sim} {
-    csim_design -clean -compiler clang -argv $tb_argv
+    csim_design -clean -argv $tb_argv
+    # csim_design -clean -compiler clang -argv $tb_argv
 }
 
 if {$do_syn} {

@@ -31,6 +31,7 @@ DMAS=inoutdma
 DMA_IPS=$(addsuffix .zip,$(DMAS))
 RESBLOCKS=res2a res2b res2c res3a res3b res3c res3d res4a res4b res4c res4d res4e res4f res5a res5b res5c
 RESBLOCK_IPS=$(addsuffix .zip,$(RESBLOCKS))
+RESBLOCK_STREAMER_IPS=$(addsuffix _streamer.zip,$(RESBLOCKS))
 MISC_LAYERS=preres postres
 MISC_LAYER_IPS=$(addsuffix .zip,$(MISC_LAYERS))
 DEFAULT_FREQ_MHZ=250
@@ -41,7 +42,8 @@ NET=w1a2_v1.0
 
 all: resnet50.xo
 
-resnet50.xo: $(RESBLOCK_IPS) $(DMA_IPS) $(MISC_LAYER_IPS)
+resnet50.xo: $(RESBLOCK_IPS) $(RESBLOCK_STREAMER_IPS) $(DMA_IPS) $(MISC_LAYER_IPS)
+
 	vivado -mode batch -source ipi.tcl -tclargs $(DEFAULT_FREQ_MHZ) $(DEVICE)
 	vivado -mode batch -source package_ip.tcl -tclargs resnet50 ip/ ip_repo/
 	vivado -mode batch -source package_dcp.tcl -tclargs resnet50 ip/ ip_repo/ $(DEVICE)
@@ -52,6 +54,12 @@ $(RESBLOCK_IPS): %.zip: resblock.tcl ../src/resblock.cpp ../src/testbench/tb_res
 	rm -rf build_$*
 	vivado_hls resblock.tcl -tclargs `if [[ $* = res*a ]]; then echo 2; else echo 1; fi` $* $(NET) $(COMMAND) $(DEVICE) > build_$*.log
 	cp build_$*/sol1/impl/ip/*.zip $@
+
+$(RESBLOCK_STREAMER_IPS): %_streamer.zip: streamer.tcl ../src/streamer.cpp
+	if [[ $* = res*a ]]; then echo "Recipe for 2-branch block streamer $*"; else echo "Recipe for 1-branch block streamer $*"; fi
+	rm -rf build_$*_streamer
+	vivado_hls streamer.tcl -tclargs `if [[ $* = res*a ]]; then echo 2; else echo 1; fi` $* $(NET) $(COMMAND) $(DEVICE) > build_$*_streamer.log
+	cp build_$*_streamer/sol1/impl/ip/*.zip $@
 
 inoutdma.zip: inoutdma.tcl ../src/inoutdma.cpp
 	echo "Recipe for bidirectional DMA"

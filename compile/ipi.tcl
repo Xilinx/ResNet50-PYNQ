@@ -29,6 +29,11 @@
 set clkfreqmhz  [lindex $::argv 0]
 set device      [lindex $::argv 1]
 
+#TODO: generate this list from SLR number argument
+set available_SLRs [list 0 1 2 3]
+set single_streamer_layers [list res2a res2b res2c res3a res3b res3c res3d res4a res4b res4c res4d res4e res4f res5a res5b res5c]
+
+
 # Set the reference directory for source file relative paths (by default the value is script directory path)
 set origin_dir "."
 
@@ -172,7 +177,9 @@ set obj [get_filesets sim_1]
 proc cr_bd_resnet50 { parentCell } {
 
   global clkfreqmhz
-
+  global single_streamer_layers
+  global available_SLRs
+  
   # CHANGE DESIGN NAME HERE
   set design_name resnet50
 
@@ -207,6 +214,17 @@ proc cr_bd_resnet50 { parentCell } {
   xilinx.com:hls:preres:1.0\
   xilinx.com:hls:postres:1.0\
   "
+
+  foreach layer $single_streamer_layers {
+    lappend list_check_ips xilinx.com:hls:${layer}_streamer:1.0
+  }
+
+  puts "IP list: $list_check_ips"
+
+  # if usign mem-packing
+  # xilinx.com:user:mem_subsystem_slr1:1.0\
+  # xilinx.com:user:mem_subsystem_slr2:1.0\
+  # xilinx.com:user:mem_subsystem_slr3:1.0\
 
    set list_ips_missing ""
    common::send_msg_id "BD_TCL-006" "INFO" "Checking if the following IPs exist in the project's IP catalog: $list_check_ips ."
@@ -259,8 +277,17 @@ proc cr_bd_resnet50 { parentCell } {
   # Create clock and reset ports according to SDx spec
   create_bd_port -dir I -type clk ap_clk
   set_property CONFIG.FREQ_HZ [expr {$clkfreqmhz*1000000}] [get_bd_ports ap_clk]
+
   create_bd_port -dir I -type rst ap_rst_n
   set_property CONFIG.POLARITY ACTIVE_LOW [get_bd_ports ap_rst_n]
+
+  # if using mem-packing
+  #create_bd_port -dir I -type clk ap_clk_2
+  #set_property CONFIG.FREQ_HZ [expr {$clkfreqmhz*2*1000000}] [get_bd_ports ap_clk_2]
+
+  # create_bd_port -dir I -type rst ap_rst_n_2
+  # set_property CONFIG.POLARITY ACTIVE_LOW [get_bd_ports ap_rst_n_2]
+
 
   # Create resblock instances
   set res2a_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:res2a:1.0 res2a_0 ]
@@ -280,17 +307,27 @@ proc cr_bd_resnet50 { parentCell } {
   set res5b_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:res5b:1.0 res5b_0 ]
   set res5c_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:res5c:1.0 res5c_0 ]
 
+  # Create per-layer streamers instances
+  foreach layer $single_streamer_layers {
+    set ${layer}_streamer [ create_bd_cell -type ip -vlnv xilinx.com:hls:${layer}_streamer:1.0 ${layer}_streamer ]
+  }
+
+
+  # if using mem-packing
+  # add per slr mem_subsystem
+
   set inoutdma_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:inoutdma:1.0 inoutdma_0 ]
   set preres_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:preres:1.0 preres_0 ]
   set postres_0 [ create_bd_cell -type ip -vlnv xilinx.com:hls:postres:1.0 postres_0 ]
 
+  # if using mem-packing ap_clk_2 is used for double pumping: add reset?
   #create reset infrastructure
   #reset originates in SLR0 and we pipeline it using one register in each slr:
   #SLR0 -> SLR1 -> SLR2 -> SLR3
   #from each slr pipeline register, we push the reset through a BUFG to destinations
   #using a passthrough reduced logic to avoid wire type errors 
   foreach RST [list 0] {
-    foreach SLR [list 0 1 2 3] {
+    foreach SLR $available_SLRs {
       puts "Implementing reset ${RST} infrastructure for SLR${SLR}"
 
       create_bd_cell -type ip -vlnv xilinx.com:ip:c_shift_ram:12.0 rst${RST}_pipe_slr${SLR}
@@ -347,20 +384,55 @@ proc cr_bd_resnet50 { parentCell } {
       connect_bd_intf_net [get_bd_intf_pins ${SRC}_0/output_V_V] [get_bd_intf_pins dwc_${SRC}_${DST}/S_AXIS]
       connect_bd_intf_net [get_bd_intf_pins dwc_${SRC}_${DST}/M_AXIS] [get_bd_intf_pins ${DST}_0/input_V_V]
       connect_bd_net [get_bd_ports ap_clk] [get_bd_pins dwc_${SRC}_${DST}/aclk]
+      # TODO (IMP): choose rstx_pass_slr0 according to the SLRs ip are
       connect_bd_net [get_bd_pins rst0_pass_slr0/Res] [get_bd_pins dwc_${SRC}_${DST}/aresetn]
     } else {
       puts "Connecting $SRC to $DST directly"
       connect_bd_intf_net [get_bd_intf_pins ${SRC}_0/output_V_V] [get_bd_intf_pins ${DST}_0/input_V_V]
     }
   }
+
+  # if usign mem-packing : check following list
+  # connect weight streams for non-packed layers
+  foreach layer $single_streamer_layers {
+    puts "$layer - connecting weights"
+    connect_bd_net [get_bd_ports ap_clk] [get_bd_pins ${layer}_streamer/ap_clk]
+
+    # TODO: automatic reset connections (remenber to delete manual connections)
+    # foreach SLR $available_SLRs {
+    #   set in_slr [lsearch $SRC $layer]
+    #   if { $obj eq -1 } {puts "yes"}
+    #     connect_bd_net [get_bd_pins rst0_pass_slr1/Res] [get_bd_pins res2a_streamer/ap_rst_n]
+    # }
+    
+    connect_bd_intf_net [get_bd_intf_pins ${layer}_streamer/weights2a_V_V] [get_bd_intf_pins ${layer}_0/weights2a_V_V]
+    connect_bd_intf_net [get_bd_intf_pins ${layer}_streamer/weights2b_V_V] [get_bd_intf_pins ${layer}_0/weights2b_V_V]
+    connect_bd_intf_net [get_bd_intf_pins ${layer}_streamer/weights2c_V_V] [get_bd_intf_pins ${layer}_0/weights2c_V_V]
+    if { [regexp {res.*a} $layer] } {
+      puts "$layer - connecting bypass weights"
+      connect_bd_intf_net [get_bd_intf_pins ${layer}_streamer/weights1_V_V] [get_bd_intf_pins ${layer}_0/weights1_V_V]
+    }
+  }
   connect_bd_intf_net [get_bd_intf_pins inoutdma_0/weights_V_V] [get_bd_intf_pins postres_0/weights_V_V]
 
+  # if usign mem-packing
+  #connect streams to per-slr packed streamers
+
+
+  # if usign mem-packing : connect memories per slr. connect rst_2
   # Create port connections
   connect_bd_net [get_bd_ports ap_clk] [get_bd_pins res2a_0/ap_clk] [get_bd_pins res2b_0/ap_clk] [get_bd_pins res2c_0/ap_clk] [get_bd_pins res3a_0/ap_clk] [get_bd_pins res3b_0/ap_clk] [get_bd_pins res3c_0/ap_clk] [get_bd_pins res3d_0/ap_clk] [get_bd_pins res4a_0/ap_clk] [get_bd_pins res4b_0/ap_clk] [get_bd_pins res4c_0/ap_clk] [get_bd_pins res4d_0/ap_clk] [get_bd_pins res4e_0/ap_clk] [get_bd_pins res4f_0/ap_clk] [get_bd_pins res5a_0/ap_clk] [get_bd_pins res5b_0/ap_clk] [get_bd_pins res5c_0/ap_clk] [get_bd_pins inoutdma_0/ap_clk] [get_bd_pins preres_0/ap_clk] [get_bd_pins postres_0/ap_clk]
   connect_bd_net [get_bd_pins rst0_pass_slr0/Res] [get_bd_pins res3d_0/ap_rst_n] [get_bd_pins inoutdma_0/ap_rst_n] [get_bd_pins preres_0/ap_rst_n] [get_bd_pins postres_0/ap_rst_n]
   connect_bd_net [get_bd_pins rst0_pass_slr1/Res] [get_bd_pins res2a_0/ap_rst_n] [get_bd_pins res3c_0/ap_rst_n] [get_bd_pins res4a_0/ap_rst_n] [get_bd_pins res4b_0/ap_rst_n] [get_bd_pins res5c_0/ap_rst_n]
   connect_bd_net [get_bd_pins rst0_pass_slr2/Res] [get_bd_pins res2b_0/ap_rst_n] [get_bd_pins res3b_0/ap_rst_n] [get_bd_pins res4c_0/ap_rst_n] [get_bd_pins res4d_0/ap_rst_n] [get_bd_pins res5b_0/ap_rst_n]
   connect_bd_net [get_bd_pins rst0_pass_slr3/Res] [get_bd_pins res2c_0/ap_rst_n] [get_bd_pins res3a_0/ap_rst_n] [get_bd_pins res4e_0/ap_rst_n] [get_bd_pins res4f_0/ap_rst_n] [get_bd_pins res5a_0/ap_rst_n]
+
+  # TODO :  delete after solving the automatic reset connections
+  #streamers rst connections
+  connect_bd_net [get_bd_pins rst0_pass_slr0/Res] [get_bd_pins res3d_streamer/ap_rst_n] [get_bd_pins inoutdma_streamer/ap_rst_n] [get_bd_pins preres_streamer/ap_rst_n] [get_bd_pins postres_streamer/ap_rst_n]
+  connect_bd_net [get_bd_pins rst0_pass_slr1/Res] [get_bd_pins res2a_streamer/ap_rst_n] [get_bd_pins res3c_streamer/ap_rst_n] [get_bd_pins res4a_streamer/ap_rst_n] [get_bd_pins res4b_streamer/ap_rst_n] [get_bd_pins res5c_streamer/ap_rst_n]
+  connect_bd_net [get_bd_pins rst0_pass_slr2/Res] [get_bd_pins res2b_streamer/ap_rst_n] [get_bd_pins res3b_streamer/ap_rst_n] [get_bd_pins res4c_streamer/ap_rst_n] [get_bd_pins res4d_streamer/ap_rst_n] [get_bd_pins res5b_streamer/ap_rst_n]
+  connect_bd_net [get_bd_pins rst0_pass_slr3/Res] [get_bd_pins res2c_streamer/ap_rst_n] [get_bd_pins res3a_streamer/ap_rst_n] [get_bd_pins res4e_streamer/ap_rst_n] [get_bd_pins res4f_streamer/ap_rst_n] [get_bd_pins res5a_streamer/ap_rst_n]
 
   # Create constant 1 for start and continue lines
   create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0
@@ -390,6 +462,16 @@ set_property SYNTH_CHECKPOINT_MODE "Hierarchical" [ get_files resnet50.bd ]
 make_wrapper -files [get_files resnet50.bd] -import -fileset sources_1 -top
 # OOC synthesis of IPs then block design
 set_property -name {STEPS.SYNTH_DESIGN.ARGS.MORE OPTIONS} -value {-mode out_of_context} -objects [get_runs synth_1]
+
+generate_target all [get_files  resnet50.bd ]
+export_ip_user_files -of_objects [get_files resnet50.bd ] -no_script -sync -force -quiet
+create_ip_run [get_files -of_objects [get_fileset sources_1] resnet50.bd ]
+
+# if usign mem-packing : check this
+foreach layer $single_streamer_layers {
+  set_property STEPS.SYNTH_DESIGN.ARGS.FANOUT_LIMIT 100 [get_runs resnet50_${layer}_streamer_0_synth_1]
+}
+
 launch_runs synth_1 -jobs 10
 wait_on_run [get_runs synth_1]
 

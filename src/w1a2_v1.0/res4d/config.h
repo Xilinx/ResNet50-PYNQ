@@ -1,5 +1,5 @@
 #pragma once
-// RES4D BYPASS
+// BYPASS
 #define RES_BYPINBITS 4
 #define RES_BYPTHBITS 64
 #define RES_BYPTHPE 32
@@ -14,6 +14,7 @@
 #define RES_2A_STRIDE 1
 #define RES_2A_IFMDIM 14
 #define RES_2A_OFMDIM 14
+#define RES_2A_WBITS 1
 #define RES_2A_WINTERPRET Recast<Binary>
 #define RES_2A_ACTBITS 2
 #define RES_2A_INBITS 2
@@ -29,6 +30,7 @@
 #define RES_2B_STRIDE 1
 #define RES_2B_IFMDIM 14
 #define RES_2B_OFMDIM 14
+#define RES_2B_WBITS 1
 #define RES_2B_WINTERPRET Recast<Binary>
 #define RES_2B_ACTBITS 2
 #define RES_2B_INBITS 2
@@ -44,6 +46,7 @@
 #define RES_2C_STRIDE 1
 #define RES_2C_IFMDIM 14
 #define RES_2C_OFMDIM 14
+#define RES_2C_WBITS 1
 #define RES_2C_WINTERPRET Recast<Binary>
 #define RES_2C_ACTBITS 4
 #define RES_2C_INBITS 2
