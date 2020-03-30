@@ -29,9 +29,11 @@
 SHELL := /bin/bash
 DMAS=inoutdma
 DMA_IPS=$(addsuffix .zip,$(DMAS))
-RESBLOCKS=res2a res2b res2c res3a res3b res3c res3d res4a res4b res4c res4d res4e res4f res5a res5b res5c
-RESBLOCK_IPS=$(addsuffix .zip,$(RESBLOCKS))
-RESBLOCK_STREAMER_IPS=$(addsuffix _streamer.zip,$(RESBLOCKS))
+RESBLOCKS_BAKEDIN=res2a res2b res2c res3a res3b res3c res3d
+RESBLOCKS_STREAMED=res4a res4b res4c res4d res4e res4f res5a res5b res5c
+RESBLOCK_BAKEDIN_IPS=$(addsuffix .zip,$(RESBLOCKS_BAKEDIN))
+RESBLOCK_STREAMED_IPS=$(addsuffix .zip,$(RESBLOCKS_STREAMED))
+RESBLOCK_STREAMER_IPS=$(addsuffix _streamer.zip,$(RESBLOCKS_STREAMED))
 MISC_LAYERS=preres postres
 MISC_LAYER_IPS=$(addsuffix .zip,$(MISC_LAYERS))
 DEFAULT_FREQ_MHZ=250
@@ -42,18 +44,37 @@ NET=w1a2_v1.0
 
 all: resnet50.xo
 
-resnet50.xo: $(RESBLOCK_IPS) $(RESBLOCK_STREAMER_IPS) $(DMA_IPS) $(MISC_LAYER_IPS)
-
+resnet50.xo: $(RESBLOCK_BAKEDIN_IPS) $(RESBLOCK_STREAMED_IPS) $(RESBLOCK_STREAMER_IPS) $(DMA_IPS) $(MISC_LAYER_IPS)
 	vivado -mode batch -source ipi.tcl -tclargs $(DEFAULT_FREQ_MHZ) $(DEVICE)
 	vivado -mode batch -source package_ip.tcl -tclargs resnet50 ip/ ip_repo/
 	vivado -mode batch -source package_dcp.tcl -tclargs resnet50 ip/ ip_repo/ $(DEVICE)
 	vivado -mode batch -source gen_xo.tcl -tclargs resnet50.xo resnet50 ip_repo/ kernel.xml
 
-$(RESBLOCK_IPS): %.zip: resblock.tcl ../src/resblock.cpp ../src/testbench/tb_resblock.cpp
+.PHONY=resblocks_bakedin
+resblocks_bakedin: $(RESBLOCK_BAKEDIN_IPS)
+
+.PHONY=resblocks_streamed
+resblocks_streamed: $(RESBLOCK_STREAMED_IPS)
+
+.PHONY=resblocks
+resblocks: resblock_bakedin resblocks_streamed
+
+$(RESBLOCK_BAKEDIN_IPS): %.zip: resblock.tcl ../src/resblock.cpp ../src/testbench/tb_resblock.cpp
 	if [[ $* = res*a ]]; then echo "Recipe for 2-branch block $*"; else echo "Recipe for 1-branch block $*"; fi
+	echo "Using bakedin weights for $*"
 	rm -rf build_$*
-	vivado_hls resblock.tcl -tclargs `if [[ $* = res*a ]]; then echo 2; else echo 1; fi` $* $(NET) $(COMMAND) $(DEVICE) > build_$*.log
+	vivado_hls resblock.tcl -tclargs `if [[ $* = res*a ]]; then echo 2; else echo 1; fi` $* $(NET) $(COMMAND) $(DEVICE) RES_WMEM > build_$*.log
 	cp build_$*/sol1/impl/ip/*.zip $@
+
+$(RESBLOCK_STREAMED_IPS): %.zip: resblock.tcl ../src/resblock.cpp ../src/testbench/tb_resblock.cpp
+	if [[ $* = res*a ]]; then echo "Recipe for 2-branch block $*"; else echo "Recipe for 1-branch block $*"; fi
+	echo "Using streaming weights for $*"
+	rm -rf build_$*
+	vivado_hls resblock.tcl -tclargs `if [[ $* = res*a ]]; then echo 2; else echo 1; fi` $* $(NET) $(COMMAND) $(DEVICE) RES_WSTREAM > build_$*.log
+	cp build_$*/sol1/impl/ip/*.zip $@
+
+.PHONY=streamers
+streamers: $(RESBLOCK_STREAMER_IPS)
 
 $(RESBLOCK_STREAMER_IPS): %_streamer.zip: streamer.tcl ../src/streamer.cpp
 	if [[ $* = res*a ]]; then echo "Recipe for 2-branch block streamer $*"; else echo "Recipe for 1-branch block streamer $*"; fi

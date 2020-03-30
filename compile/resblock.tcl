@@ -31,6 +31,7 @@ set block_name [lindex $argv 1]
 set net [lindex $argv 2]
 set command [lindex $argv 3]
 set device [lindex $argv 4]
+set memtype [lindex $argv 5]
 set current_dir [pwd]
 set tb_argv "$current_dir/../src/$net/$block_name/input.csv $current_dir/../src/$net/$block_name/output.csv"
 
@@ -69,7 +70,7 @@ switch $command {
 
 open_project build_$block_name
 
-add_files ../src/resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src/hls/finn-hls"
+add_files ../src/resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -D${memtype} -I../src/$net/$block_name -I../src/hls -I../src/hls/finn-hls"
 # add stremer to tb
 add_files -tb ../src/streamer.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src -I../src/hls/finn-hls -I../src/testbench"
 add_files -tb ../src/testbench/tb_resblock.cpp -cflags "-std=c++0x -DOFFLOAD -DRAWHLS -DRES${resblock_type}BR -I../src/$net/$block_name -I../src/hls -I../src -I../src/hls/finn-hls -I../src/testbench"

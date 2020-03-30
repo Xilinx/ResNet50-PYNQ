@@ -28,17 +28,15 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define RES_WSTREAM // TODO build system should take care of this
-
 #define AP_INT_MAX_W 8192
 #include "ap_int.h"
 #include "hls_stream.h"
 #include "reslayer.h"
 #include "config.h"
+#include "params_thresholds.h"
 using namespace hls;
 
 #ifdef RES_WSTREAM // TODO cleaner merge?
-  #include "params_thresholds.h"
   void resblock(stream<ap_uint<RES_2A_SIMD*RES_BYPINBITS> > &input, stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > &output,
   #ifdef RES2BR
                 stream<ap_uint<RES_1_SIMD*RES_1_PE*RES_1_WBITS> > &weights1,
@@ -85,33 +83,34 @@ using namespace hls;
 
 #else
 
-  #include "params.h"
+  #include "params_weights.h"
   void resblock(stream<ap_uint<RES_2A_SIMD*RES_BYPINBITS> > &input, stream<ap_uint<RES_2C_PE*RES_2C_ACTBITS> > &output){
   #pragma HLS INTERFACE axis register both port=output
   #pragma HLS INTERFACE axis register both port=input
   #pragma HLS INTERFACE ap_ctrl_chain port=return
-  #include "pragma.h"
+  #include "pragma_thresholds.h"
+  #include "pragma_weights.h"
   #pragma HLS DATAFLOW
   #ifdef RES1BR
       Residual_1branch<   RES_BYPINBITS, RES_BYPTHBITS, RES_BYPTHPE, RES_BYPTHTMEM,   
                           RES_2A_IFMC, RES_2A_OFMC, RES_2A_IFMDIM, RES_2A_OFMDIM, RES_2A_STRIDE, RES_2A_SIMD, RES_2A_PE, RES_2A_WMEM, RES_2A_TMEM, RES_2A_WINTERPRET, RES_2A_THBITS, RES_2A_MACBITS, RES_2A_INBITS, RES_2A_ACTBITS, 
                           RES_2B_IFMC, RES_2B_OFMC, RES_2B_IFMDIM, RES_2B_OFMDIM, RES_2B_STRIDE, RES_2B_SIMD, RES_2B_PE, RES_2B_WMEM, RES_2B_TMEM, RES_2B_WINTERPRET, RES_2B_THBITS, RES_2B_MACBITS, RES_2B_INBITS, RES_2B_ACTBITS, 
                           RES_2C_IFMC, RES_2C_OFMC, RES_2C_IFMDIM, RES_2C_OFMDIM, RES_2C_STRIDE, RES_2C_SIMD, RES_2C_PE, RES_2C_WMEM, RES_2C_TMEM, RES_2C_WINTERPRET, RES_2C_THBITS, RES_2C_MACBITS, RES_2C_INBITS, RES_2C_ACTBITS>
-          (input, output, thres_FPGAThresholdLayer_br20, 
-                          weights_FPGABipolarConvThresholdLayer_br21, thres_FPGABipolarConvThresholdLayer_br21, 
-                          weights_FPGABipolarConvThresholdLayer_br22, thres_FPGABipolarConvThresholdLayer_br22, 
-                          weights_FPGABipolarConvThresholdLayer_br23, thres_FPGABipolarConvThresholdLayer_br23, 1);
+          (input, output, thres_FPGAThresholdLayer_top, 
+                          weights_FPGABipolarConvThresholdLayer_br2a, thres_FPGABipolarConvThresholdLayer_br2a, 
+                          weights_FPGABipolarConvThresholdLayer_br2b, thres_FPGABipolarConvThresholdLayer_br2b, 
+                          weights_FPGABipolarConvThresholdLayer_br2c, thres_FPGABipolarConvThresholdLayer_br2c, 1);
   #elif RES2BR
       Residual_2branches< RES_BYPINBITS, RES_BYPTHBITS, RES_BYPTHPE, RES_BYPTHTMEM, 
                           RES_2A_IFMC, RES_2A_OFMC, RES_2A_IFMDIM, RES_2A_OFMDIM, RES_2A_STRIDE, RES_2A_SIMD, RES_2A_PE, RES_2A_WMEM, RES_2A_TMEM, RES_2A_WINTERPRET, RES_2A_THBITS, RES_2A_MACBITS, RES_2A_INBITS, RES_2A_ACTBITS, 
                           RES_2B_IFMC, RES_2B_OFMC, RES_2B_IFMDIM, RES_2B_OFMDIM, RES_2B_STRIDE, RES_2B_SIMD, RES_2B_PE, RES_2B_WMEM, RES_2B_TMEM, RES_2B_WINTERPRET, RES_2B_THBITS, RES_2B_MACBITS, RES_2B_INBITS, RES_2B_ACTBITS, 
                           RES_2C_IFMC, RES_2C_OFMC, RES_2C_IFMDIM, RES_2C_OFMDIM, RES_2C_STRIDE, RES_2C_SIMD, RES_2C_PE, RES_2C_WMEM, RES_2C_TMEM, RES_2C_WINTERPRET, RES_2C_THBITS, RES_2C_MACBITS, RES_2C_INBITS, RES_2C_ACTBITS,
                           RES_1_IFMC, RES_1_OFMC, RES_1_IFMDIM, RES_1_OFMDIM, RES_1_STRIDE, RES_1_SIMD, RES_1_PE, RES_1_WMEM, RES_1_TMEM, RES_1_WINTERPRET, RES_1_THBITS, RES_1_MACBITS, RES_1_INBITS, RES_1_ACTBITS>
-          (input, output, thres_FPGAThresholdLayer_top0, 
-                          weights_FPGABipolarConvThresholdLayer_br20, thres_FPGABipolarConvThresholdLayer_br20, 
-                          weights_FPGABipolarConvThresholdLayer_br21, thres_FPGABipolarConvThresholdLayer_br21, 
-                          weights_FPGABipolarConvThresholdLayer_br22, thres_FPGABipolarConvThresholdLayer_br22, 
-                          weights_FPGABipolarConvThresholdLayer_br10, thres_FPGABipolarConvThresholdLayer_br10, 1);
+          (input, output, thres_FPGAThresholdLayer_top, 
+                          weights_FPGABipolarConvThresholdLayer_br2a, thres_FPGABipolarConvThresholdLayer_br2a, 
+                          weights_FPGABipolarConvThresholdLayer_br2b, thres_FPGABipolarConvThresholdLayer_br2b, 
+                          weights_FPGABipolarConvThresholdLayer_br2c, thres_FPGABipolarConvThresholdLayer_br2c, 
+                          weights_FPGABipolarConvThresholdLayer_br1, thres_FPGABipolarConvThresholdLayer_br1, 1);
   #endif
   }
 #endif

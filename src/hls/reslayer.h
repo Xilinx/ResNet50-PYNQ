@@ -107,36 +107,36 @@ void Residual_2branches(
         CASSERT_DATAFLOW(BR1_OFMC % (BR2A_IFMC/BYP_THPE) == 0);
         stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > duplicate_in("duplicate_in");
 #pragma HLS RESOURCE variable=duplicate_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=duplicate_in depth=64
+#pragma HLS STREAM variable=duplicate_in depth=16
 	stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > conv_br2a_in("conv_br2a_in");
 #pragma HLS RESOURCE variable=conv_br2a_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2a_in depth=64
+#pragma HLS STREAM variable=conv_br2a_in depth=16
 	stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > bypass_fifo("bypass_fifo");
 #pragma HLS STREAM variable=bypass_fifo depth=BR2A_IFMDIM*4*BR2A_STRIDE*(BR2A_IFMC/BR2A_SIMD)
 	stream<ap_uint<BR1_SIMD*BR1_INBITS> > conv_br1_in("conv_br1_inter");
 #pragma HLS RESOURCE variable=conv_br1_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br1_in depth=64
+#pragma HLS STREAM variable=conv_br1_in depth=16
 	stream<ap_uint<BR1_PE*BR1_ACTBITS> > conv_br1_out("conv_br1_out");
 #pragma HLS RESOURCE variable=conv_br1_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br1_out depth=64
+#pragma HLS STREAM variable=conv_br1_out depth=16
 	stream<ap_uint<BR2A_PE*BR2A_ACTBITS> > conv_br2a_out("conv_br2a_out");
 #pragma HLS RESOURCE variable=conv_br2a_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2a_out depth=64
+#pragma HLS STREAM variable=conv_br2a_out depth=16
 	stream<ap_uint<BR2B_IFMC*BR2B_INBITS> > conv_br2b_in("conv_br2b_in");
 #pragma HLS RESOURCE variable=conv_br2b_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2b_in depth=64
+#pragma HLS STREAM variable=conv_br2b_in depth=16
 	stream<ap_uint<BR2B_OFMC*BR2B_ACTBITS> > conv_br2b_out("conv_br2b_out");
 #pragma HLS RESOURCE variable=conv_br2b_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2b_out depth=64
+#pragma HLS STREAM variable=conv_br2b_out depth=16
 	stream<ap_uint<BR2C_SIMD*BR2C_INBITS> > conv_br2c_in("conv_br2c_in");
 #pragma HLS RESOURCE variable=conv_br2c_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2c_in depth=64
+#pragma HLS STREAM variable=conv_br2c_in depth=16
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br2c_out("conv_br2c_out");
 #pragma HLS RESOURCE variable=conv_br2c_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2c_out depth=64
+#pragma HLS STREAM variable=conv_br2c_out depth=16
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br1_out_resize("conv_br1_out_resize");
 #pragma HLS RESOURCE variable=conv_br1_out_resize core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br1_out_resize depth=64
+#pragma HLS STREAM variable=conv_br1_out_resize depth=16
         
         Thresholding_Batch <BR2A_IFMDIM, BR2A_IFMC, BR2A_SIMD, Slice<ap_uint<BYP_INBITS>>, Slice<ap_uint<BR2A_INBITS>>>(in, duplicate_in, threshMemBYP, numReps);
         
@@ -191,8 +191,12 @@ void Residual_2branches(
 	
 	// Generate conv input stream (parallel in width)
 	stream<ap_uint<BR2B_SIMD * BR2B_INBITS>> convInp("BR2B.convInp");
-	ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension,
-					OFMDim, BR2B_SIMD, 1>(dwc_2B_in, convInp, numReps);
+
+        if (BR2B_STRIDE > 1) {
+	        ConvolutionInputGenerator_kernel_stride<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension, OFMDim, BR2B_SIMD, BR2B_STRIDE>(dwc_2B_in, convInp, numReps);
+        } else {
+	        ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension, OFMDim, BR2B_SIMD, BR2B_STRIDE>(dwc_2B_in, convInp, numReps);
+        }
 
 	// Feed everything to the MVAU
 	unsigned const MatrixW = 3 * 3 * BR2B_IFMC;
@@ -281,33 +285,33 @@ void Residual_1branch(
         CASSERT_DATAFLOW(BR2A_IFMC == BR2C_OFMC);
         CASSERT_DATAFLOW(BR2A_IFMDIM == BR2C_OFMDIM);
 	stream<ap_uint<BR2A_SIMD*BYP_INBITS> > thres_br2a_in("thres_br2a_in");
-#pragma HLS STREAM variable=thres_br2a_in depth=64
+#pragma HLS STREAM variable=thres_br2a_in depth=16
 #pragma HLS RESOURCE variable=thres_br2a_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > conv_br2a_in("conv_br2a_in");
-#pragma HLS STREAM variable=conv_br2a_in depth=64
+#pragma HLS STREAM variable=conv_br2a_in depth=16
 #pragma HLS RESOURCE variable=conv_br2a_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_IFMC*BYP_INBITS> > conv_br1_in("conv_br1_in");
-#pragma HLS STREAM variable=conv_br1_in depth=64
+#pragma HLS STREAM variable=conv_br1_in depth=16
 #pragma HLS RESOURCE variable=conv_br1_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_SIMD*BYP_INBITS> > bypass_fifo("bypass_fifo");
 #pragma HLS STREAM variable=bypass_fifo depth=BR2A_IFMDIM*4*(BR2A_IFMC/BR2A_SIMD)
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br1_out("conv_br1_out");
-#pragma HLS STREAM variable=conv_br1_out depth=64
+#pragma HLS STREAM variable=conv_br1_out depth=16
 #pragma HLS RESOURCE variable=conv_br1_out core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_PE*BR2A_ACTBITS> > conv_br2a_out("conv_br2a_out");
-#pragma HLS STREAM variable=conv_br2a_out depth=64
+#pragma HLS STREAM variable=conv_br2a_out depth=16
 #pragma HLS RESOURCE variable=conv_br2a_out core=FIFO_LUTRAM
 	stream<ap_uint<BR2B_IFMC*BR2B_INBITS> > conv_br2b_in("conv_br2b_in");
-#pragma HLS STREAM variable=conv_br2b_in depth=64
+#pragma HLS STREAM variable=conv_br2b_in depth=16
 #pragma HLS RESOURCE variable=conv_br2b_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2B_OFMC*BR2B_ACTBITS> > conv_br2b_out("conv_br2b_out");
-#pragma HLS STREAM variable=conv_br2b_out depth=64
+#pragma HLS STREAM variable=conv_br2b_out depth=16
 #pragma HLS RESOURCE variable=conv_br2b_out core=FIFO_LUTRAM
 	stream<ap_uint<BR2C_SIMD*BR2C_INBITS> > conv_br2c_in("conv_br2c_in");
-#pragma HLS STREAM variable=conv_br2c_in depth=64
+#pragma HLS STREAM variable=conv_br2c_in depth=16
 #pragma HLS RESOURCE variable=conv_br2c_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br2c_out("conv_br2c_out");
-#pragma HLS STREAM variable=conv_br2c_out depth=64
+#pragma HLS STREAM variable=conv_br2c_out depth=16
 #pragma HLS RESOURCE variable=conv_br2c_out core=FIFO_LUTRAM
 		
 	DuplicateStreams_Batch<BR2A_SIMD*BYP_INBITS, BR2A_IFMDIM*BR2A_IFMDIM*(BR2A_IFMC/BR2A_SIMD)>(in, thres_br2a_in, bypass_fifo, numReps);
@@ -351,8 +355,7 @@ void Residual_1branch(
 	
 	// Generate conv input stream (parallel in width)
 	stream<ap_uint<BR2B_SIMD * BR2B_INBITS>> convInp("BR2B.convInp");
-	ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension,
-					OFMDim, BR2B_SIMD, 1>(dwc_2B_in, convInp, numReps);
+	ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension, OFMDim, BR2B_SIMD, BR2B_STRIDE>(dwc_2B_in, convInp, numReps);
 
 	// Feed everything to the MVAU
 	unsigned const MatrixW = 3 * 3 * BR2B_IFMC;
@@ -431,36 +434,36 @@ void Residual_2branches_WStream(
         CASSERT_DATAFLOW(BR1_OFMC % (BR2A_IFMC/BYP_THPE) == 0);
         stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > duplicate_in("duplicate_in");
 #pragma HLS RESOURCE variable=duplicate_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=duplicate_in depth=64
+#pragma HLS STREAM variable=duplicate_in depth=16
 	stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > conv_br2a_in("conv_br2a_in");
 #pragma HLS RESOURCE variable=conv_br2a_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2a_in depth=64
+#pragma HLS STREAM variable=conv_br2a_in depth=16
 	stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > bypass_fifo("bypass_fifo");
 #pragma HLS STREAM variable=bypass_fifo depth=BR2A_IFMDIM*4*BR2A_STRIDE*(BR2A_IFMC/BR2A_SIMD)
 	stream<ap_uint<BR1_SIMD*BR1_INBITS> > conv_br1_in("conv_br1_inter");
 #pragma HLS RESOURCE variable=conv_br1_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br1_in depth=64
+#pragma HLS STREAM variable=conv_br1_in depth=16
 	stream<ap_uint<BR1_PE*BR1_ACTBITS> > conv_br1_out("conv_br1_out");
 #pragma HLS RESOURCE variable=conv_br1_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br1_out depth=64
+#pragma HLS STREAM variable=conv_br1_out depth=16
 	stream<ap_uint<BR2A_PE*BR2A_ACTBITS> > conv_br2a_out("conv_br2a_out");
 #pragma HLS RESOURCE variable=conv_br2a_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2a_out depth=64
+#pragma HLS STREAM variable=conv_br2a_out depth=16
 	stream<ap_uint<BR2B_IFMC*BR2B_INBITS> > conv_br2b_in("conv_br2b_in");
 #pragma HLS RESOURCE variable=conv_br2b_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2b_in depth=64
+#pragma HLS STREAM variable=conv_br2b_in depth=16
 	stream<ap_uint<BR2B_OFMC*BR2B_ACTBITS> > conv_br2b_out("conv_br2b_out");
 #pragma HLS RESOURCE variable=conv_br2b_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2b_out depth=64
+#pragma HLS STREAM variable=conv_br2b_out depth=16
 	stream<ap_uint<BR2C_SIMD*BR2C_INBITS> > conv_br2c_in("conv_br2c_in");
 #pragma HLS RESOURCE variable=conv_br2c_in core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2c_in depth=64
+#pragma HLS STREAM variable=conv_br2c_in depth=16
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br2c_out("conv_br2c_out");
 #pragma HLS RESOURCE variable=conv_br2c_out core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br2c_out depth=64
+#pragma HLS STREAM variable=conv_br2c_out depth=16
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br1_out_resize("conv_br1_out_resize");
 #pragma HLS RESOURCE variable=conv_br1_out_resize core=FIFO_LUTRAM
-#pragma HLS STREAM variable=conv_br1_out_resize depth=64
+#pragma HLS STREAM variable=conv_br1_out_resize depth=16
         
         Thresholding_Batch <BR2A_IFMDIM, BR2A_IFMC, BR2A_SIMD, Slice<ap_uint<BYP_INBITS>>, Slice<ap_uint<BR2A_INBITS>>>(in, duplicate_in, threshMemBYP, numReps);
         
@@ -515,8 +518,12 @@ void Residual_2branches_WStream(
 	
 	// Generate conv input stream (parallel in width)
 	stream<ap_uint<BR2B_SIMD * BR2B_INBITS>> convInp("BR2B.convInp");
-	ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension,
-					OFMDim, BR2B_SIMD, 1>(dwc_2B_in, convInp, numReps);
+
+        if (BR2B_STRIDE > 1) {
+	        ConvolutionInputGenerator_kernel_stride<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension, OFMDim, BR2B_SIMD, BR2B_STRIDE>(dwc_2B_in, convInp, numReps);
+        } else {
+	        ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension, OFMDim, BR2B_SIMD, BR2B_STRIDE>(dwc_2B_in, convInp, numReps);
+        }
 
 	// Feed everything to the MVAU
 	unsigned const MatrixW = 3 * 3 * BR2B_IFMC;
@@ -605,33 +612,33 @@ void Residual_1branch_WStream(
         CASSERT_DATAFLOW(BR2A_IFMC == BR2C_OFMC);
         CASSERT_DATAFLOW(BR2A_IFMDIM == BR2C_OFMDIM);
 	stream<ap_uint<BR2A_SIMD*BYP_INBITS> > thres_br2a_in("thres_br2a_in");
-#pragma HLS STREAM variable=thres_br2a_in depth=64
+#pragma HLS STREAM variable=thres_br2a_in depth=16
 #pragma HLS RESOURCE variable=thres_br2a_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_SIMD*BR2A_INBITS> > conv_br2a_in("conv_br2a_in");
-#pragma HLS STREAM variable=conv_br2a_in depth=64
+#pragma HLS STREAM variable=conv_br2a_in depth=16
 #pragma HLS RESOURCE variable=conv_br2a_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_IFMC*BYP_INBITS> > conv_br1_in("conv_br1_in");
-#pragma HLS STREAM variable=conv_br1_in depth=64
+#pragma HLS STREAM variable=conv_br1_in depth=16
 #pragma HLS RESOURCE variable=conv_br1_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_SIMD*BYP_INBITS> > bypass_fifo("bypass_fifo");
 #pragma HLS STREAM variable=bypass_fifo depth=BR2A_IFMDIM*4*(BR2A_IFMC/BR2A_SIMD)
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br1_out("conv_br1_out");
-#pragma HLS STREAM variable=conv_br1_out depth=64
+#pragma HLS STREAM variable=conv_br1_out depth=16
 #pragma HLS RESOURCE variable=conv_br1_out core=FIFO_LUTRAM
 	stream<ap_uint<BR2A_PE*BR2A_ACTBITS> > conv_br2a_out("conv_br2a_out");
-#pragma HLS STREAM variable=conv_br2a_out depth=64
+#pragma HLS STREAM variable=conv_br2a_out depth=16
 #pragma HLS RESOURCE variable=conv_br2a_out core=FIFO_LUTRAM
 	stream<ap_uint<BR2B_IFMC*BR2B_INBITS> > conv_br2b_in("conv_br2b_in");
-#pragma HLS STREAM variable=conv_br2b_in depth=64
+#pragma HLS STREAM variable=conv_br2b_in depth=16
 #pragma HLS RESOURCE variable=conv_br2b_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2B_OFMC*BR2B_ACTBITS> > conv_br2b_out("conv_br2b_out");
-#pragma HLS STREAM variable=conv_br2b_out depth=64
+#pragma HLS STREAM variable=conv_br2b_out depth=16
 #pragma HLS RESOURCE variable=conv_br2b_out core=FIFO_LUTRAM
 	stream<ap_uint<BR2C_SIMD*BR2C_INBITS> > conv_br2c_in("conv_br2c_in");
-#pragma HLS STREAM variable=conv_br2c_in depth=64
+#pragma HLS STREAM variable=conv_br2c_in depth=16
 #pragma HLS RESOURCE variable=conv_br2c_in core=FIFO_LUTRAM
 	stream<ap_uint<BR2C_PE*BR2C_ACTBITS> > conv_br2c_out("conv_br2c_out");
-#pragma HLS STREAM variable=conv_br2c_out depth=64
+#pragma HLS STREAM variable=conv_br2c_out depth=16
 #pragma HLS RESOURCE variable=conv_br2c_out core=FIFO_LUTRAM
 		
 	DuplicateStreams_Batch<BR2A_SIMD*BYP_INBITS, BR2A_IFMDIM*BR2A_IFMDIM*(BR2A_IFMC/BR2A_SIMD)>(in, thres_br2a_in, bypass_fifo, numReps);
@@ -675,8 +682,7 @@ void Residual_1branch_WStream(
 	
 	// Generate conv input stream (parallel in width)
 	stream<ap_uint<BR2B_SIMD * BR2B_INBITS>> convInp("BR2B.convInp");
-	ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension,
-					OFMDim, BR2B_SIMD, 1>(dwc_2B_in, convInp, numReps);
+	ConvolutionInputGenerator<3, BR2B_IFMC, BR2B_INBITS, intermediateDimension, OFMDim, BR2B_SIMD, BR2B_STRIDE>(dwc_2B_in, convInp, numReps);
 
 	// Feed everything to the MVAU
 	unsigned const MatrixW = 3 * 3 * BR2B_IFMC;
