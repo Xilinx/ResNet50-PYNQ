@@ -46,7 +46,7 @@ void preres(stream<ap_uint<L0_IFMC*L0_INBITS> > &input, stream<ap_uint<pool0_CHA
 #pragma HLS DATAFLOW
     stream<ap_uint<L0_OFMC*L0_ACTBITS> > inter("inter");
 #pragma HLS RESOURCE variable=inter core=FIFO_LUTRAM
-#pragma HLS STREAM variable=inter depth=64
+#pragma HLS STREAM variable=inter depth=32
     ConvolutionalLayerMMV_Same_Batch_kernel_stride_dsp_packed<L0_KERNELDIM, L0_IFMC, L0_IFMDIM, L0_OFMC, L0_STRIDE, 
            L0_SIMD, L0_PE, L0_WMEM, L0_TMEM, L0_WBITS, L0_THBITS, L0_MACBITS, L0_INBITS, L0_ACTBITS, L0_MMV, FULL_THRESHOLDS>
                                         (input, inter, weights_conv0, thres_conv0, 1);
