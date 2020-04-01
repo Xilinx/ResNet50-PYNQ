@@ -2,6 +2,10 @@
 
 We provide a Jupyter Notebook and Python script illustrating synthetic performance and power measurement of the ResNet50 accelerator, and Python-based inference code illustrating a multithreaded inference application.
 All of the example code is pure Python, using PYNQ for accelerator memory allocation and interaction with the ResNet50 kernel in the Alveo card.
+Before running any of the Python applications, make sure to have downloaded the weights file for the fully connected layer with:
+```
+wget -O fcweights.csv https://www.xilinx.com/bin/public/openDownload?filename=resnet50pynq.fcweights.csv
+```
 
 ## Multithreaded Inference
 
@@ -28,8 +32,8 @@ We recommend the following parameter settings when optimizing for low latency or
 
 Optimization Target | Parameter Settings                   | Expected Latency (ms) | Expected Throughput (FPS)
 -------             | ------------------                   | -------------         | -------------
-Latency             | --max_bs 1 --preprocess_workers 4    | 2                     | 500
-Throughput          | --max_bs 100 --preprocess_workers 16 | 50                    | 2000
+Latency             | --max_bs 1 --preprocess_workers 4    | 1.9                   | 500
+Throughput          | --max_bs 100 --preprocess_workers 16 | 45                    | 2250
 
 ### Calculating Accuracy
 
@@ -60,18 +64,23 @@ Some example invocations of the script:
 
 ```
 user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 1 --reps 100
-Throughput: 495 FPS
-Latency: 2.02 ms
-FPGA Power: 17.15 Watts
-Board Power: 30.18 Watts
+Throughput: 520 FPS
+Latency: 1.92 ms
+FPGA Power: 16.32 Watts
+Board Power: 29.32 Watts
+user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 10 --reps 100
+Throughput: 1735 FPS
+Latency: 5.76 ms
+FPGA Power: 32.93 Watts
+Board Power: 47.42 Watts
 user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 100 --reps 100
-Throughput: 1958 FPS
-Latency: 51.06 ms
-FPGA Power: 43.1 Watts
-Board Power: 59.33 Watts
+Throughput: 2258 FPS
+Latency: 44.28 ms
+FPGA Power: 43.7 Watts
+Board Power: 61.64 Watts
 user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 1000 --reps 100
-Throughput: 2015 FPS
-Latency: 496.14 ms
-FPGA Power: 45.16 Watts
-Board Power: 60.97 Watts
+Throughput: 2330 FPS
+Latency: 429.14 ms
+FPGA Power: 48.59 Watts
+Board Power: 64.59 Watts
 ```
