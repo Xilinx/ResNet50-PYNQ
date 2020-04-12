@@ -335,7 +335,14 @@ proc cr_bd_resnet50 { parentCell } {
   set_property name m_axi_gmem1 [get_bd_intf_ports m_axi_gmem1_0]
   set_property name m_axi_gmem2 [get_bd_intf_ports m_axi_gmem2_0]
   set_property name s_axi_control [get_bd_intf_ports s_axi_control_0]
-  
+
+  # Create port connections
+  connect_bd_net [get_bd_ports ap_clk] [get_bd_pins res2a_0/ap_clk] [get_bd_pins res2b_0/ap_clk] [get_bd_pins res2c_0/ap_clk] [get_bd_pins res3a_0/ap_clk] [get_bd_pins res3b_0/ap_clk] [get_bd_pins res3c_0/ap_clk] [get_bd_pins res3d_0/ap_clk] [get_bd_pins res4a_0/ap_clk] [get_bd_pins res4b_0/ap_clk] [get_bd_pins res4c_0/ap_clk] [get_bd_pins res4d_0/ap_clk] [get_bd_pins res4e_0/ap_clk] [get_bd_pins res4f_0/ap_clk] [get_bd_pins res5a_0/ap_clk] [get_bd_pins res5b_0/ap_clk] [get_bd_pins res5c_0/ap_clk] [get_bd_pins inoutdma_0/ap_clk] [get_bd_pins preres_0/ap_clk] [get_bd_pins postres_0/ap_clk]
+  connect_bd_net [get_bd_pins rst0_pass_slr0/Res] [get_bd_pins res3d_0/ap_rst_n] [get_bd_pins inoutdma_0/ap_rst_n] [get_bd_pins preres_0/ap_rst_n] [get_bd_pins postres_0/ap_rst_n]
+  connect_bd_net [get_bd_pins rst0_pass_slr1/Res] [get_bd_pins res2a_0/ap_rst_n] [get_bd_pins res3c_0/ap_rst_n] [get_bd_pins res4a_0/ap_rst_n] [get_bd_pins res4b_0/ap_rst_n] [get_bd_pins res5c_0/ap_rst_n]
+  connect_bd_net [get_bd_pins rst0_pass_slr2/Res] [get_bd_pins res2b_0/ap_rst_n] [get_bd_pins res3b_0/ap_rst_n] [get_bd_pins res4c_0/ap_rst_n] [get_bd_pins res4d_0/ap_rst_n] [get_bd_pins res5b_0/ap_rst_n]
+  connect_bd_net [get_bd_pins rst0_pass_slr3/Res] [get_bd_pins res2c_0/ap_rst_n] [get_bd_pins res3a_0/ap_rst_n] [get_bd_pins res4e_0/ap_rst_n] [get_bd_pins res4f_0/ap_rst_n] [get_bd_pins res5a_0/ap_rst_n]
+
   foreach SRC [list inoutdma preres res2a res2b res2c res3a res3b res3c res3d res4a res4b res4c res4d res4e res4f res5a res5b res5c postres] DST [list preres res2a res2b res2c res3a res3b res3c res3d res4a res4b res4c res4d res4e res4f res5a res5b res5c postres inoutdma] {
     set OUTWB [get_property [list CONFIG.TDATA_NUM_BYTES] [get_bd_intf_pins ${SRC}_0/output_V_V]]
     set INWB [get_property [list CONFIG.TDATA_NUM_BYTES] [get_bd_intf_pins ${DST}_0/input_V_V]]
@@ -346,39 +353,32 @@ proc cr_bd_resnet50 { parentCell } {
       set_property -dict [list CONFIG.M_TDATA_NUM_BYTES $INWB] [get_bd_cells dwc_${SRC}_${DST}]
 
       create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 fifo_${SRC}_dwc
-      set_property -dict [list CONFIG.FIFO_DEPTH {32} CONFIG.IS_ACLK_ASYNC {0} CONFIG.FIFO_MEMORY_TYPE {distributed}] [get_bd_cells fifo_${SRC}_dwc]
+      set_property -dict [list CONFIG.FIFO_DEPTH {1024} CONFIG.IS_ACLK_ASYNC {0} CONFIG.FIFO_MEMORY_TYPE {ultra}] [get_bd_cells fifo_${SRC}_dwc]
       connect_bd_net [get_bd_ports ap_clk] [get_bd_pins fifo_${SRC}_dwc/s_axis_aclk]
-      connect_bd_net [get_bd_ports ap_rst_n] [get_bd_pins fifo_${SRC}_dwc/s_axis_aresetn]
+      connect_bd_net [get_bd_pins ${SRC}_0/ap_rst_n] [get_bd_pins fifo_${SRC}_dwc/s_axis_aresetn]
       connect_bd_intf_net [get_bd_intf_pins ${SRC}_0/output_V_V] [get_bd_intf_pins fifo_${SRC}_dwc/S_AXIS]
       connect_bd_intf_net [get_bd_intf_pins fifo_${SRC}_dwc/M_AXIS] [get_bd_intf_pins dwc_${SRC}_${DST}/S_AXIS]
 
       create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 fifo_dwc_${DST}
-      set_property -dict [list CONFIG.FIFO_DEPTH {32} CONFIG.IS_ACLK_ASYNC {0} CONFIG.FIFO_MEMORY_TYPE {distributed}] [get_bd_cells fifo_dwc_${DST}]
+      set_property -dict [list CONFIG.FIFO_DEPTH {1024} CONFIG.IS_ACLK_ASYNC {0} CONFIG.FIFO_MEMORY_TYPE {ultra}] [get_bd_cells fifo_dwc_${DST}]
       connect_bd_net [get_bd_ports ap_clk] [get_bd_pins fifo_dwc_${DST}/s_axis_aclk]
-      connect_bd_net [get_bd_ports ap_rst_n] [get_bd_pins fifo_dwc_${DST}/s_axis_aresetn]
+      connect_bd_net [get_bd_pins ${SRC}_0/ap_rst_n] [get_bd_pins fifo_dwc_${DST}/s_axis_aresetn]
       connect_bd_intf_net [get_bd_intf_pins dwc_${SRC}_${DST}/M_AXIS] [get_bd_intf_pins fifo_dwc_${DST}/S_AXIS]
       connect_bd_intf_net [get_bd_intf_pins fifo_dwc_${DST}/M_AXIS] [get_bd_intf_pins ${DST}_0/input_V_V]
 
       connect_bd_net [get_bd_ports ap_clk] [get_bd_pins dwc_${SRC}_${DST}/aclk]
-      connect_bd_net [get_bd_pins rst0_pass_slr0/Res] [get_bd_pins dwc_${SRC}_${DST}/aresetn]
+      connect_bd_net [get_bd_pins ${SRC}_0/ap_rst_n] [get_bd_pins dwc_${SRC}_${DST}/aresetn]
     } else {
       puts "Connecting $SRC to $DST through FIFO: $SRC -> FIFO -> $DST"
       create_bd_cell -type ip -vlnv xilinx.com:ip:axis_data_fifo:2.0 fifo_${SRC}_${DST}
-      set_property -dict [list CONFIG.FIFO_DEPTH {32} CONFIG.IS_ACLK_ASYNC {0} CONFIG.FIFO_MEMORY_TYPE {distributed}] [get_bd_cells fifo_${SRC}_${DST}]
+      set_property -dict [list CONFIG.FIFO_DEPTH {1024} CONFIG.IS_ACLK_ASYNC {0} CONFIG.FIFO_MEMORY_TYPE {ultra}] [get_bd_cells fifo_${SRC}_${DST}]
       connect_bd_net [get_bd_ports ap_clk] [get_bd_pins fifo_${SRC}_${DST}/s_axis_aclk]
-      connect_bd_net [get_bd_ports ap_rst_n] [get_bd_pins fifo_${SRC}_${DST}/s_axis_aresetn]
+      connect_bd_net [get_bd_pins ${SRC}_0/ap_rst_n] [get_bd_pins fifo_${SRC}_${DST}/s_axis_aresetn]
       connect_bd_intf_net [get_bd_intf_pins ${SRC}_0/output_V_V] [get_bd_intf_pins fifo_${SRC}_${DST}/S_AXIS]
       connect_bd_intf_net [get_bd_intf_pins fifo_${SRC}_${DST}/M_AXIS] [get_bd_intf_pins ${DST}_0/input_V_V]
     }
   }
   connect_bd_intf_net [get_bd_intf_pins inoutdma_0/weights_V_V] [get_bd_intf_pins postres_0/weights_V_V]
-
-  # Create port connections
-  connect_bd_net [get_bd_ports ap_clk] [get_bd_pins res2a_0/ap_clk] [get_bd_pins res2b_0/ap_clk] [get_bd_pins res2c_0/ap_clk] [get_bd_pins res3a_0/ap_clk] [get_bd_pins res3b_0/ap_clk] [get_bd_pins res3c_0/ap_clk] [get_bd_pins res3d_0/ap_clk] [get_bd_pins res4a_0/ap_clk] [get_bd_pins res4b_0/ap_clk] [get_bd_pins res4c_0/ap_clk] [get_bd_pins res4d_0/ap_clk] [get_bd_pins res4e_0/ap_clk] [get_bd_pins res4f_0/ap_clk] [get_bd_pins res5a_0/ap_clk] [get_bd_pins res5b_0/ap_clk] [get_bd_pins res5c_0/ap_clk] [get_bd_pins inoutdma_0/ap_clk] [get_bd_pins preres_0/ap_clk] [get_bd_pins postres_0/ap_clk]
-  connect_bd_net [get_bd_pins rst0_pass_slr0/Res] [get_bd_pins res3d_0/ap_rst_n] [get_bd_pins inoutdma_0/ap_rst_n] [get_bd_pins preres_0/ap_rst_n] [get_bd_pins postres_0/ap_rst_n]
-  connect_bd_net [get_bd_pins rst0_pass_slr1/Res] [get_bd_pins res2a_0/ap_rst_n] [get_bd_pins res3c_0/ap_rst_n] [get_bd_pins res4a_0/ap_rst_n] [get_bd_pins res4b_0/ap_rst_n] [get_bd_pins res5c_0/ap_rst_n]
-  connect_bd_net [get_bd_pins rst0_pass_slr2/Res] [get_bd_pins res2b_0/ap_rst_n] [get_bd_pins res3b_0/ap_rst_n] [get_bd_pins res4c_0/ap_rst_n] [get_bd_pins res4d_0/ap_rst_n] [get_bd_pins res5b_0/ap_rst_n]
-  connect_bd_net [get_bd_pins rst0_pass_slr3/Res] [get_bd_pins res2c_0/ap_rst_n] [get_bd_pins res3a_0/ap_rst_n] [get_bd_pins res4e_0/ap_rst_n] [get_bd_pins res4f_0/ap_rst_n] [get_bd_pins res5a_0/ap_rst_n]
 
   # Auto-assign addresses (TODO: check)
   exclude_bd_addr_seg [get_bd_addr_segs inoutdma_0/Data_m_axi_gmem0/SEG_m_axi_gmem0_Reg]

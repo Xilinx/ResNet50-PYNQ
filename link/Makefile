@@ -33,6 +33,7 @@ XCLBIN_OUTPUT=$(KERNEL).xclbin
 XCLBIN_FREQ_MHZ ?= 250
 XCLBIN_FREQ_OPTS := "0:$(XCLBIN_FREQ_MHZ)|1:$(XCLBIN_FREQ_MHZ)"
 XCLBIN_OPTIMIZE := 2
+XCLBIN_REPORT := 0
 #configuration defines passed to the HLS code
 #can define chipscope core insertion during XOCC link
 #example to add debug cores to all interfaces:
@@ -56,7 +57,7 @@ PLRAM_OPTS=--xp param:compiler.userPreSysLinkTcl=$(PLRAM_CONFIG)
 all: $(XCLBIN_OUTPUT)
 
 $(XCLBIN_OUTPUT): $(XO_INPUT)
-	v++ --link --target hw $(PROFILE_OPTS) --kernel_frequency $(XCLBIN_FREQ_OPTS) --save-temps -R2 --optimize $(XCLBIN_OPTIMIZE) $(CHIPSCOPE) $(MEMBANK) --platform $(PLATFORM) $(FLOORPLAN_OPTS) $(PLRAM_OPTS) $< -o $@
+	v++ --link --target hw $(PROFILE_OPTS) --kernel_frequency $(XCLBIN_FREQ_OPTS) --save-temps -R$(XCLBIN_REPORT) --optimize $(XCLBIN_OPTIMIZE) $(CHIPSCOPE) $(MEMBANK) --platform $(PLATFORM) $(FLOORPLAN_OPTS) $(PLRAM_OPTS) $< -o $@
 
 .PHONY=clean
 clean:

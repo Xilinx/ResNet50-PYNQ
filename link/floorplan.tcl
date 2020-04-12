@@ -28,26 +28,47 @@
 
 #contents of this script are run after opt_design and before placement
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/inoutdma_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_inoutdma_dwc]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/dwc_inoutdma_preres]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_dwc_preres]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/preres_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_preres_dwc]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/dwc_preres_res2a]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_dwc_res2a]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res2a_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res2a_res2b]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res2b_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res2b_res2c]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res2c_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res2c_res3a]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3a_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res3a_res3b]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3b_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res3b_res3c]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3c_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res3c_res3d]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res3d_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res3d_res4a]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4a_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res4a_res4b]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4b_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res4b_res4c]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4c_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res4c_res4d]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4d_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res4d_res4e]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4e_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res4e_res4f]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res4f_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res4f_res5a]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res5a_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR3 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res5a_res5b]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res5b_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR2 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res5b_res5c]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/res5c_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR1 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_res5c_postres]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/postres_0]] -clear_locs
+add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/fifo_postres_inoutdma]] -clear_locs
 
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/rst0_pipe_slr0]] -clear_locs
 add_cells_to_pblock pblock_dynamic_SLR0 [get_cells [list pfm_top_i/dynamic_region/resnet50_1/resnet50_i/rst0_buf_slr0]] -clear_locs
