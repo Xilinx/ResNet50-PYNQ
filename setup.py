@@ -80,7 +80,7 @@ long_description = ("".join(readme_lines))
 
 extend_package(os.path.join(module_name, "notebooks"))
 setup(name=module_name,
-      version="1.0",
+      version="1.1",
       description="Quantized dataflow implementation of ResNet50 on Alveo",
       long_description=long_description,
       long_description_content_type="text/markdown",
