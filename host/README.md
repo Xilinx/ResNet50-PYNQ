@@ -30,10 +30,10 @@ The script will work with any image or folder of images in `JPEG` format.
 
 We recommend the following parameter settings when optimizing for low latency or high throughput respectively:
 
-Optimization Target | Parameter Settings                   | Expected Latency (ms) | Expected Throughput (FPS)
--------             | ------------------                   | -------------         | -------------
-Latency             | --max_bs 1 --preprocess_workers 4    | 1.9                   | 500
-Throughput          | --max_bs 100 --preprocess_workers 16 | 45                    | 2250
+Optimization Target | Parameter Settings                   
+-------             | ------------------                   
+Latency             | --max_bs 1 --preprocess_workers 4    
+Throughput          | --max_bs 100 --preprocess_workers 16 
 
 ### Calculating Accuracy
 
@@ -60,27 +60,11 @@ Parameter            | Description                         									   | Default
 --bs                 | Batch size                           									 | 1
 --reps               | Number of batches                                       | 100
 
-Some example invocations of the script:
+Some performance measurements for 100 repetitions:
 
-```
-user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 1 --reps 100
-Throughput: 520 FPS
-Latency: 1.92 ms
-FPGA Power: 16.32 Watts
-Board Power: 29.32 Watts
-user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 10 --reps 100
-Throughput: 1735 FPS
-Latency: 5.76 ms
-FPGA Power: 32.93 Watts
-Board Power: 47.42 Watts
-user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 100 --reps 100
-Throughput: 2258 FPS
-Latency: 44.28 ms
-FPGA Power: 43.7 Watts
-Board Power: 61.64 Watts
-user@host:/ResNet50-PYNQ/host$ python synth_bench_power.py --bs 1000 --reps 100
-Throughput: 2330 FPS
-Latency: 429.14 ms
-FPGA Power: 48.59 Watts
-Board Power: 64.59 Watts
-```
+Batch size       | 1              | 10             | 100            | 1000           |
+---------------  |--------------- |--------------- |--------------- |--------------- |
+Throughput (FPS) | 527            | 1895           | 2605           | 2703           |
+Latency (ms)     | 1.9            | 5.3            | 38.4           | 369.9          |
+FPGA Power (W)   | 16.6           | 33.7           | 50.6           | 54.6           |
+Board Power (W)  | 29.5           | 50.4           | 68.8           | 70.8           |
