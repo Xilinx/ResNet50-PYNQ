@@ -102,8 +102,8 @@ if __name__== "__main__":
     ol=pynq.Overlay(args.xclbin)
     accelerator=ol.resnet50_1
 
-    #allocate a buffer for FC weights, targeting the Alveo DDR Bank 0
-    fcbuf = pynq.allocate((1000,2048), dtype=np.int8, target=ol.bank0)
+    #allocate a buffer for FC weights, targeting the Alveo PLRAM 0
+    fcbuf = pynq.allocate((1000,2048), dtype=np.int8, target=ol.PLRAM0)
 
     # Load the weight from a CSV file and push them to the accelerator buffer:
     fcweights = np.genfromtxt(args.fcweights, delimiter=',', dtype=np.int8)

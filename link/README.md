@@ -41,6 +41,9 @@ Note that enabling profiling reduces the achievable frequency of the ResNet50 de
 The *floorplan.tcl* script defines a floorplan for the ResNet50 by assigning each of the IPs in the accelerator structure to a specific SLR.
 This is required to minimize the number of SLR crossings and ensure proper reset pipelining, both of which increase the top frequency of the design.
 
+### PLRAM Configuration
+
+The *setup_plram.tcl* script configures PLRAM0 in SLR0 with 2MB of storage in URAM. This is intended for storing the weights of the fully connected layer. PLRAM capacity can be increased up to 4MB by editing the configuration script. 
 
 ## Resource Utilization
 
@@ -48,8 +51,8 @@ The resource utilization on Alveo U250 is as follows:
 
 Resource Type              |  Used  | Available | Utilization (%) 
 ---------------------------|--------|-----------|----------------
-CLB LUTs                   | 986892 |   1727040 | 57.14 
-CLB Registers              | 826784 |   3454080 | 23.94 
-Block RAM Tile             | 1975   |      2688 | 73.47 
-URAM                       |    0   |      1280 |  0.00 
-DSPs                       | 1611   |     12288 | 13.11 
+CLB kLUTs                  |   1027 |      1727 | 59 
+CLB kFFs                   |    904 |      3454 | 26 
+Block RAM Tile             |   1935 |      2688 | 72 
+URAM                       |    109 |      1280 | 9 
+DSPs                       |   1611 |     12288 | 13 

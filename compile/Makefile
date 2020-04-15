@@ -41,7 +41,7 @@ NET=w1a2_v1.0
 
 all: resnet50.xo
 
-resnet50.xo: $(RESBLOCK_IPS) $(DMA_IPS) $(MISC_LAYER_IPS)
+resnet50.xo: $(MISC_LAYER_IPS) $(RESBLOCK_IPS) $(DMA_IPS)
 	vivado -mode batch -source ipi.tcl -tclargs $(DEFAULT_FREQ_MHZ) $(DEVICE)
 	vivado -mode batch -source package_ip.tcl -tclargs resnet50 ip/ ip_repo/
 	vivado -mode batch -source package_dcp.tcl -tclargs resnet50 ip/ ip_repo/ $(DEVICE)

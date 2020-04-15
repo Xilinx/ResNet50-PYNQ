@@ -38,8 +38,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "tb_utils.h"
-#include "net/inpipe/config.h"
-#include "net/outpipe/config.h"
+#include "inpipe/config.h"
+#include "outpipe/config.h"
 using namespace hls;
 using namespace std;
 

@@ -113,6 +113,10 @@ void MaxPoolStride_Same_Batch(stream<ap_uint<NumChannels * Precision> > & in,
 #pragma HLS INLINE
 
         stream<ap_uint<NumChannels * Precision> > paddingOut, resizeOut;
+#pragma HLS RESOURCE variable=paddingOut core=FIFO_LUTRAM
+#pragma HLS STREAM variable=paddingOut depth=32
+#pragma HLS RESOURCE variable=resizeOut core=FIFO_LUTRAM
+#pragma HLS STREAM variable=resizeOut depth=32
 
         // Number of output windows
         constexpr unsigned int outputWindows = (ImgDim) / Stride + ((ImgDim % Stride) > 0);
@@ -483,13 +487,24 @@ void ConvolutionalLayerMMV_Same_Batch_kernel_stride_dsp_packed(stream<ap_uint<IF
 	constexpr unsigned int MatrixH = OFMChannels;
 	const unsigned int mmvReps = (numReps * OFMDim * OFMDim) / NumVecs;
 	
-	stream<ap_uint<IFMChannels * Input_precision> > resizedInput("resizedInput_kernel_stride");
+	stream<ap_uint<IFMChannels * Input_precision> > resizedInput("resizedInput");
+#pragma HLS RESOURCE variable=resizedInput core=FIFO_LUTRAM
+#pragma HLS STREAM variable=resizedInput depth=32
 	stream<MultiChanData<NumVecs, IFMChannels * Input_precision> >swu2dwc("swu2dwc");
+#pragma HLS RESOURCE variable=swu2dwc core=FIFO_LUTRAM
+#pragma HLS STREAM variable=swu2dwc depth=32
 	stream<MultiChanData<NumVecs, SIMDWidth * Input_precision> > dwc2mmv("dwc2mmv");
+#pragma HLS RESOURCE variable=dwc2mmv core=FIFO_LUTRAM
+#pragma HLS STREAM variable=dwc2mmv depth=32
 	stream<MultiChanData<NumVecs, PECount * ActivationPrecision> > mmv2dwc("mmv2dwc");
+#pragma HLS RESOURCE variable=mmv2dwc core=FIFO_LUTRAM
+#pragma HLS STREAM variable=mmv2dwc depth=32
 	stream<MultiChanData<NumVecs, OFMChannels * ActivationPrecision> > dwc2flatten("dwc2flatten");
+#pragma HLS RESOURCE variable=dwc2flatten core=FIFO_LUTRAM
+#pragma HLS STREAM variable=dwc2flatten depth=32
 	stream<ap_uint<NumVecs * OFMChannels * ActivationPrecision> > flatten2serialize("flatten2serialize");
-
+#pragma HLS RESOURCE variable=flatten2serialize core=FIFO_LUTRAM
+#pragma HLS STREAM variable=flatten2serialize depth=32
 
 	SameResize_Batch<IFMDim, ConvKernelDim, Stride, IFMChannels, Input_precision, 2>(in, resizedInput, numReps);	
 	ConvolutionMMVInputGenerator_kernel_stride<ConvKernelDim, IFMChannels, Input_precision, intermediateDimension,

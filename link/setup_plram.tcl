@@ -26,39 +26,8 @@
 #  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-PLATFORM ?= "xilinx_u250_xdma_201830_2"
-XO_INPUT=../compile/resnet50.xo
-KERNEL = resnet50
-XCLBIN_OUTPUT=$(KERNEL).xclbin
-XCLBIN_FREQ_MHZ ?= 250
-XCLBIN_FREQ_OPTS := "0:$(XCLBIN_FREQ_MHZ)|1:$(XCLBIN_FREQ_MHZ)"
-XCLBIN_OPTIMIZE := 2
-XCLBIN_REPORT := 0
-#configuration defines passed to the HLS code
-#can define chipscope core insertion during XOCC link
-#example to add debug cores to all interfaces:
-#CHIPSCOPE=--dk chipscope:$(KERNEL)_1:s_axi_control --dk chipscope:$(KERNEL)_1:m_axi_gmem0 --dk chipscope:$(KERNEL)_1:m_axi_gmem1
-CHIPSCOPE=
-#optional memory bank assignment, for multi-MM designs (MULTIBANK defined)
-MEMBANK=--sp $(KERNEL)_1.m_axi_gmem2:PLRAM[0]
-#example dual bank assignment:
-#MEMBANK=--sp $(KERNEL)_1.m_axi_gmem0:DDR[0] --sp $(KERNEL)_1.m_axi_gmem1:DDR[3]
-#floorplanning
-FLOORPLAN=`pwd`/floorplan.tcl
-FLOORPLAN_OPTS=--xp vivado_prop:run.impl_1.STEPS.OPT_DESIGN.TCL.POST=$(FLOORPLAN)
-#profiling
-#example to add profiling to all kernels
-#PROFILE_OPTS=--profile_kernel data:all:all:all
-PROFILE_OPTS=
-#PLRAM set-up
-PLRAM_CONFIG=`pwd`/setup_plram.tcl
-PLRAM_OPTS=--xp param:compiler.userPreSysLinkTcl=$(PLRAM_CONFIG)
+# Setup PLRAM 
+sdx_memory_subsystem::update_plram_specification [get_bd_cells /memory_subsystem] PLRAM_MEM00 { SIZE 2M AXI_DATA_WIDTH 512 SLR_ASSIGNMENT SLR0 READ_LATENCY 6 MEMORY_PRIMITIVE URAM}
+validate_bd_design -force
+save_bd_design
 
-all: $(XCLBIN_OUTPUT)
-
-$(XCLBIN_OUTPUT): $(XO_INPUT)
-	v++ --link --target hw $(PROFILE_OPTS) --kernel_frequency $(XCLBIN_FREQ_OPTS) --save-temps -R$(XCLBIN_REPORT) --optimize $(XCLBIN_OPTIMIZE) $(CHIPSCOPE) $(MEMBANK) --platform $(PLATFORM) $(FLOORPLAN_OPTS) $(PLRAM_OPTS) $< -o $@
-
-.PHONY=clean
-clean:
-	-git clean -xfd
