@@ -35,6 +35,12 @@ Optimization Target | Parameter Settings
 Latency             | --max_bs 1 --preprocess_workers 4    
 Throughput          | --max_bs 100 --preprocess_workers 16 
 
+### Demo command 
+
+```
+python infer_pynq_threaded.py --xclbin ./resnet50.xclbin --fcweights ./fcweights.csv --img_path ./pictures --max_bs 1 --preprocess_workers 4 --outfile ./out.txt --labels labels.pkl
+```
+
 ### Calculating Accuracy
 
 The script optionally takes a CSV file of expected predictions for each of the image(s) provided as input.
@@ -59,6 +65,12 @@ Parameter            | Description                         									   | Default
 --shell              | Name of required Alveo shell                            | xilinx_u250_xdma_201830_2
 --bs                 | Batch size                           									 | 1
 --reps               | Number of batches                                       | 100
+
+### Demo command 
+
+```
+python synth_bench_power.py --xclbin ./resnet50.xclbin --fcweights ./fcweights.csv --shell xilinx_u250_xdma_201830_2 --bs 1 --reps 100
+```
 
 Some performance measurements for 100 repetitions:
 
