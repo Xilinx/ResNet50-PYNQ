@@ -177,24 +177,41 @@ starttime = time.monotonic()
 
 # for all images, scatter, infer, gather
 nimages = 0
+prev_nimages = 0
+g = None
+s = None
 while nimages < num_processed:
     if rank == 0:
+        # wait on previous scatter if it exists
+        if s is not None:
+            s.Wait()
         #assemble a batch from minibatches
         for i in range(world_size-1):
             batch[i+1] = preprocess_minibatch(args.bs, files[nimages+i*args.bs:nimages+(i+1)*args.bs], args.preprocess_workers)
     # on all ranks, scatter
-    comm.Scatter(batch, minibatch, root=0)
-    # on non-zero ranks, infer
+    s = comm.Iscatter(batch, minibatch, root=0)
+    # on non-zero ranks, infer, and on rank zero log (previous) results
     if rank != 0:
+        s.Wait()
         result_minibatch = infer_images(accelerator, input_buf, output_buf, fcbuf, args.bs, minibatch)
+    else:
+        # on rank 0, log results
+        if g is not None:
+            g.Wait()
+            log_results(results, prev_nimages, result_batch[1:])
     # on all ranks, gather
-    comm.Gather(result_minibatch, result_batch, root=0)
-    # on rank 0, log results
-    if rank == 0:
-        log_results(results, nimages, result_batch[1:])
+    g = comm.Igather(result_minibatch, result_batch, root=0)
+    prev_nimages = nimages
     nimages += (world_size-1)*args.bs
+    
+
+
 
 if rank == 0:
+    # log final results
+    g.Wait()
+    log_results(results, prev_nimages, result_batch[1:])
+
     endtime = time.monotonic()
     print("Duration for ",num_processed," images: ",endtime - starttime)
     print("FPS: ",num_processed / (endtime - starttime))
