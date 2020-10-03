@@ -35,13 +35,11 @@ import argparse
 from os import listdir
 from os.path import isfile, join, split
 import time
-import threading
-from queue import Queue
-from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 from mpi4py import MPI
+from multiprocessing import Pool
 
-def setup_accelerator(xclbin, wfile):
+def setup_accelerator(xclbin, wfile, bs):
 
     localrank = os.getenv('OMPI_COMM_WORLD_LOCAL_RANK')
     if not localrank:
@@ -76,150 +74,130 @@ def setup_accelerator(xclbin, wfile):
     fcweights = fcweights[:-1].reshape(1000,2048)
     fcbuf[:] = fcweights
     fcbuf.sync_to_device()
+    
+    #allocate buffers for inputs, outputs
+    if ol.device.name == 'xilinx_u250_xdma_201830_2':
+        print(str(rank)+": allocate IO memory for U250")
+        input_buf = pynq.allocate((bs,224,224,3), dtype=np.int8, target=ol.bank0)
+        output_buf = pynq.allocate((bs,5), dtype=np.uint32, target=ol.bank0)
+    elif ol.device.name == 'xilinx_u280_xdma_201920_3':
+        print(str(rank)+": allocate IO memory for U280")
+        input_buf = pynq.allocate((bs,224,224,3), dtype=np.int8, target=ol.HBM0)
+        output_buf = pynq.allocate((bs,5), dtype=np.uint32, target=ol.HBM6)
+    else:
+        raise Exception("Unexpected device")
+    
+    accelerator = ol.resnet50_1
     print("Accelerator ready!")
 
-    return ol, fcbuf
+    return accelerator, fcbuf, input_buf, output_buf
 
-def enumerate_images():
-    global num_processed
-    for f in files:
-       yield f
-       num_processed += 1
-
-def process_image(filename):
+def preprocess_image(filename):
+    # preprocesses one image
+    # JPEG decoding -> resize
     img = cv2.imread(filename)
-    return cv2.resize(img, (224,224))
+    img = cv2.resize(img, (224,224))
+    return img
 
-def scatter_images():
-    #in rank 0, get image, assemble a batch equal to comm world size
-    batch = np.empty((world_size, 224, 224, 3), dtype=np.int8)
-    img = np.empty((224, 224, 3), dtype=np.int8)
-    nimages = 0
-    while nimages < nfiles//(world_size-1):
-        if rank == 0:
-            for i in range(world_size-1):
-                img = next(images, None)
-                #import pdb; pdb.set_trace()
-                if img is None:
-                    print(str(rank)+": Scatter done")
-                    return
-                else:
-                    batch[i][:] = img
-        # on all ranks, scatter and yield
-        comm.Scatter(batch, img, root=0)
-#        print("Put image "+str(nimages))
-        if rank != 0:
-            images_q.put(img)
-        nimages += 1
-    images_q.put(None)
-    print(str(rank)+": Scatter done")
+def preprocess_minibatch(bs, filenames, workers):
+    # processes a batch using multiple workers
+    # returns a list of numpy arrays representing one image each
+    # this needs vstacking!
+    with Pool(processes=workers) as pool:
+        return np.stack(pool.map(preprocess_image, filenames))
 
-def consume_images():
+def infer_images(accelerator, input_buf, output_buf, fcbuf, bs, minibatch):
+    input_buf[:] = minibatch
+    input_buf.sync_to_device()
+    context = accelerator.start(input_buf, output_buf, fcbuf, bs)
+    context.wait()
+    output_buf.sync_from_device()
+    return np.copy(output_buf)
 
-    accelerator = ol.resnet50_1
-    max_bs = args.max_bs
-
-    #allocate 3 buffers for inputs and outputs; each buffer can accomodate the maximum batch
-    input_buf = []
-    output_buf = []
-    buf_bs = [] #simple synchronization using a flag; if flag is >0 set buffer is in use and the value of the flag is the (actual) batch size
-
-    for i in range(3):
-        if ol.device.name == 'xilinx_u250_xdma_201830_2':
-            print(str(rank)+": allocate IO memory for U250")
-            input_buf += [pynq.allocate((max_bs,224,224,3), dtype=np.int8, target=ol.bank0)]
-            output_buf += [pynq.allocate((max_bs,5), dtype=np.uint32, target=ol.bank0)]
-        elif ol.device.name == 'xilinx_u280_xdma_201920_3':
-            print(str(rank)+": allocate IO memory for U280")
-            input_buf += [pynq.allocate((max_bs,224,224,3), dtype=np.int8, target=ol.HBM0)]
-            output_buf += [pynq.allocate((max_bs,5), dtype=np.uint32, target=ol.HBM6)]
-        else:
-            raise Exception("Unexpected device")
-            
-        buf_bs += [-1]
-
-    buf_idx = 0
-    bs = 0
-    none_count = 0
-    sync_to_device = False
-    last_idx = -1
-
-    print(str(rank)+": Starting inference")
-    print(str(rank)+": Max BS = "+str(max_bs))
-
-    while True:
-        #start inference on current batch (if it exists)
-        if buf_bs[buf_idx] > 0:
-            context = accelerator.start(input_buf[buf_idx], output_buf[buf_idx], fcbuf, buf_bs[buf_idx])
-        #get results of call on previous batch (if it exists)
-        if buf_bs[buf_idx-1] > 0:
-            output_buf[buf_idx-1].sync_from_device()
-            #put results in the output queue (after copying to np array)
-            for i in range(buf_bs[buf_idx-1]):
-                results_q.put(np.copy(output_buf[buf_idx-1][i]))
-#                print("Put result")
-        if last_idx == (buf_idx+3-1)%3 and sync_to_device:
-            results_q.put(None)
-#            print(str(rank)+": Inference done")
-            return
-        #assemble and upload next batch
-        if not sync_to_device:
-            bs=0
-            for i in range(max_bs):
-                image = images_q.get()#next(scattered_images,None)
-#                print("Get image")
-                if image is None:
-                    last_idx = buf_idx if bs==0 else (buf_idx+1)%3
-                    sync_to_device = True
-                    continue
-                input_buf[(buf_idx+1)%3][bs][:] = image
-                bs += 1
-            if bs > 0:
-                input_buf[(buf_idx+1)%3].sync_to_device()
-                buf_bs[(buf_idx+1)%3] = bs
-        #wait for inference on current batch
-        if buf_bs[buf_idx] > 0:
-            context.wait()
-        #increment buffer index
-        buf_idx = (buf_idx+1)%3
+def log_results(df, start_idx, results):
+    # get rid of outermost dimensions
+    results = results.reshape((-1, 5))
+    for i in range(len(results)):
+        df.at[df.index[start_idx+i],'Prediction'] = np.copy(results[i])
 
 
-def gather_results():
-    results = np.empty((world_size, 5), dtype=np.int32)
-    result = np.empty((5,), dtype=np.int32)
-    result_count = 0
-    while True:
-        if rank != 0:
-            try:
-                result = results_q.get_nowait()
-            except:
-                continue
-            if result is None:
-                print(str(rank)+": Gather done")
-                return
-#        print(str(rank)+" Gather result")
-        comm.Gather(result, results, root=0)
-        if rank == 0:
-            for i in range(world_size-1):
-#                print(str(rank)+": enqueue result ",i)
-                gathered_results_q.put(np.copy(results[i+1]))
-            result_count += world_size-1
-            if result_count == (len(files)//(world_size-1))*(world_size-1):
-                print(str(rank)+": Gather done")
-                return
+parser = argparse.ArgumentParser(description='ResNet50 inference with FINN and PYNQ on Alveo')
+parser.add_argument('--xclbin', type=str, nargs='+', default=None, help='Accelerator image file (xclbin)', required=True)
+parser.add_argument('--fcweights', type=str, default=None, help='FC weights file (CSV)', required=True)
+parser.add_argument('--img_path', type=str, default=None, help='Path to image or image folder', required=True)
+parser.add_argument('--bs', type=int, default=1, help='Batch size (images processed per accelerator invocation)')
+parser.add_argument('--preprocess_workers', type=int, default=1, help='Number of workers used for preprocessing')
+parser.add_argument('--outfile', type=str, default=None, help='File to dump outputs', required=False)
+parser.add_argument('--labels', type=str, default=None, help='File containing ground truth labels. If present, accuracy is calculated', required=False)
+args = parser.parse_args()
 
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+world_size = comm.Get_size()
 
-def log_results():
+accelerator = None
+fcbuf = None
+input_buf = None
+output_buf = None
+if rank != 0:
+    accelerator, fcbuf, input_buf, output_buf = setup_accelerator(args.xclbin, args.fcweights, args.bs)
 
+nfiles = np.empty(1, dtype=np.int)
+
+if rank == 0:
+    #determine if we're processing a file or folder
+    if isfile(args.img_path):
+        files = [args.img_path]
+    else:
+        files = [join(args.img_path,f) for f in listdir(args.img_path) if isfile(join(args.img_path,f))]
+
+    nfiles = len(files)
+    print(str(nfiles)+" to process")
+
+    num_processed = 0
+    
     results = pd.DataFrame({'File Name':files})
     results['Prediction'] = ""
 
-    print("Expecting ",(len(files)//(world_size-1))*(world_size-1)," results")
+batch = np.empty((world_size, args.bs, 224, 224, 3), dtype=np.int8)
+minibatch = np.empty((args.bs, 224, 224, 3), dtype=np.int8)
+result_batch = np.empty((world_size, args.bs, 5), dtype=np.int32)
+result_minibatch = np.empty((args.bs, 5), dtype=np.int32)
+result = np.empty((5,), dtype=np.int32)
 
-    #pull from the timestamp queues and add to the dataframe
-    for i in range((len(files)//(world_size-1))*(world_size-1)):
-#        print("Register result")
-        results.at[results.index[i],'Prediction'] = gathered_results_q.get()
+
+
+nfiles = comm.bcast(nfiles, root=0)
+num_processed = (world_size-1)*args.bs*(nfiles//((world_size-1)*args.bs))
+print(nfiles, num_processed)
+#wait for every rank to finish programming their accelerators
+comm.Barrier()
+starttime = time.monotonic()
+
+
+# for all images, scatter, infer, gather
+nimages = 0
+while nimages < num_processed:
+    if rank == 0:
+        #assemble a batch from minibatches
+        for i in range(world_size-1):
+            batch[i+1] = preprocess_minibatch(args.bs, files[nimages+i*args.bs:nimages+(i+1)*args.bs], args.preprocess_workers)
+    # on all ranks, scatter
+    comm.Scatter(batch, minibatch, root=0)
+    # on non-zero ranks, infer
+    if rank != 0:
+        result_minibatch = infer_images(accelerator, input_buf, output_buf, fcbuf, args.bs, minibatch)
+    # on all ranks, gather
+    comm.Gather(result_minibatch, result_batch, root=0)
+    # on rank 0, log results
+    if rank == 0:
+        log_results(results, nimages, result_batch[1:])
+    nimages += (world_size-1)*args.bs
+
+if rank == 0:
+    endtime = time.monotonic()
+    print("Duration for ",num_processed," images: ",endtime - starttime)
+    print("FPS: ",num_processed / (endtime - starttime))
 
     if args.outfile != None:
         results.to_csv(args.outfile)
@@ -243,74 +221,6 @@ def log_results():
                     top5_count += 1
         print("Top-1 Accuracy:",top1_count/total_count)
         print("Top-5 Accuracy:",top5_count/total_count)
-
-parser = argparse.ArgumentParser(description='ResNet50 inference with FINN and PYNQ on Alveo')
-parser.add_argument('--xclbin', type=str, nargs='+', default=None, help='Accelerator image file (xclbin)', required=True)
-parser.add_argument('--fcweights', type=str, default=None, help='FC weights file (CSV)', required=True)
-parser.add_argument('--img_path', type=str, default=None, help='Path to image or image folder', required=True)
-parser.add_argument('--max_bs', type=int, default=1, help='Batch size (images processed per accelerator invocation)')
-parser.add_argument('--preprocess_workers', type=int, default=1, help='Number of workers used for preprocessing')
-parser.add_argument('--outfile', type=str, default=None, help='File to dump outputs', required=False)
-parser.add_argument('--labels', type=str, default=None, help='File containing ground truth labels. If present, accuracy is calculated', required=False)
-args = parser.parse_args()
-
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-world_size = comm.Get_size()
-
-ol = None
-fcbug = None
-if rank != 0:
-    ol, fcbuf = setup_accelerator(args.xclbin, args.fcweights)
-
-nfiles = np.empty(1, dtype=np.int)
-
-#set up queues and processes
-images_q = Queue(10000)
-results_q = Queue(10000)
-if rank == 0:
-    gathered_results_q = Queue(10000)
-
-if rank == 0:
-    #determine if we're processing a file or folder
-    if isfile(args.img_path):
-        files = [args.img_path]
-    else:
-        files = [join(args.img_path,f) for f in listdir(args.img_path) if isfile(join(args.img_path,f))]
-
-    nfiles = len(files)
-    print(str(nfiles)+" to process")
-
-    num_processed = 0
-
-    pool = ThreadPoolExecutor(max_workers=args.preprocess_workers)
-
-    images = pool.map(process_image, enumerate_images())
-
-#wait for every rank to finish programming their accelerators
-comm.Barrier()
-
-starttime = time.monotonic()
-nfiles = comm.bcast(nfiles, root=0)
-
-scattered_images = scatter_images()
-
-threads = []
-threads.append(threading.Thread(target=scatter_images))
-if rank != 0:
-    threads.append(threading.Thread(target=consume_images))
-threads.append(threading.Thread(target=gather_results))
-if rank == 0:
-    threads.append(threading.Thread(target=log_results))
-
-[t.start() for t in threads]
-[t.join() for t in threads]
-
-if rank == 0:
-#    log_results()
-    endtime = time.monotonic()
-    print("Duration for ",num_processed," images: ",endtime - starttime)
-    print("FPS: ",num_processed / (endtime - starttime))
 
 print(str(rank)+": Done")
 MPI.Finalize()
