@@ -1,3 +1,5 @@
+# 🚫 This repository has been archived. For up-to-date ResNet50 dataflow FPGA acceleration, please see [FINN Examples](https://github.com/Xilinx/finn-examples).
+
 # Quantized ResNet50 Dataflow Acceleration on Alveo
 
 This repository contains an implementations of a binary ResNet50 [FINN](https://github.com/Xilinx/finn)-style dataflow accelerator targeting Alveo boards.
